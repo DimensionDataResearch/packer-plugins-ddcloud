@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"encoding/base64"
+	"math/rand"
+
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/mitchellh/mapstructure"
 	"github.com/mitchellh/packer/packer"
@@ -24,7 +27,10 @@ type Configuration struct {
 	McpUser         string `mapstructure:"mcp_user"`
 	McpPassword     string `mapstructure:"mcp_password"`
 	NetworkDomainID string `mapstructure:"networkdomain"`
+	VLANID          string `mapstructure:"vlan"`
 	SourceImage     string `mapstructure:"source_image"`
+	uniquenessKey   string
+	serverName      string
 }
 
 // Validate determines if the configuration is valid.
@@ -49,6 +55,11 @@ func (config *Configuration) Validate() (err error) {
 
 		return
 	}
+	if config.VLANID == "" {
+		err = fmt.Errorf("'vlan' has not been specified in configuration")
+
+		return
+	}
 	if config.SourceImage == "" {
 		err = fmt.Errorf("'source_image' has not been specified in configuration")
 
@@ -66,7 +77,17 @@ func (builder *Builder) Prepare(configuration ...interface{}) (warnings []string
 		return
 	}
 
-	builder.config = &Configuration{}
+	uniquenessKeyBytes := make([]byte, 8)
+	_, err = rand.Read(uniquenessKeyBytes)
+	if err != nil {
+		return
+	}
+	uniquenessKey := base64.StdEncoding.EncodeToString(uniquenessKeyBytes)
+
+	builder.config = &Configuration{
+		uniquenessKey: uniquenessKey,
+		serverName:    fmt.Sprintf("packer-build-%s", uniquenessKey),
+	}
 	err = mapstructure.Decode(configuration[0], builder.config)
 	if err != nil {
 		return
@@ -90,9 +111,10 @@ func (builder *Builder) Prepare(configuration ...interface{}) (warnings []string
 
 // Run the plugin.
 func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packer.Artifact, error) {
+	client := builder.client
 	config := builder.config
 
-	networkDomain, err := builder.client.GetNetworkDomain(config.NetworkDomainID)
+	networkDomain, err := client.GetNetworkDomain(config.NetworkDomainID)
 	if err != nil {
 		return nil, err
 	}
@@ -101,13 +123,38 @@ func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) 
 	}
 
 	ui.Message(fmt.Sprintf(
-		"Deploy server from image '%s' in network domain '%s' (datacenter '%s').",
+		"Deploy server '%s' from image '%s' in network domain '%s' (datacenter '%s').",
+		config.serverName,
 		builder.config.SourceImage,
 		networkDomain.Name,
 		networkDomain.DatacenterID,
 	))
 
-	return nil, nil
+	image, err := resolveServerImage(config.SourceImage, networkDomain.DatacenterID, client)
+	if err != nil {
+		return nil, err
+	}
+	if image == nil {
+		return nil, fmt.Errorf("Cannot find source image named '%s' in datacenter '%s'",
+			config.SourceImage,
+			networkDomain.DatacenterID,
+		)
+	}
+
+	serverArtifact, err := deployServer(*config, image, *networkDomain, client)
+	if err != nil {
+		return nil, err
+	}
+
+	ui.Message(fmt.Sprintf(
+		"Deployed server '%s' ('%s').",
+		serverArtifact.Server.Name,
+		serverArtifact.Server.ID,
+	))
+
+	// TODO: Create image from server.
+
+	return serverArtifact, nil
 }
 
 // Cancel plugin execution.
