@@ -28,7 +28,7 @@ _testmain.go
 .DS_Store
 
 # Version info
-ddcloud/version-info.go
+version-info.go
 
 # Test logs
 AccTest.log

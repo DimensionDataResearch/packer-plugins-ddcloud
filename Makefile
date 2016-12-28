@@ -1,14 +1,15 @@
-PLUGIN_NAME = ddcloud
+# TODO: Refactor targets, grouping plugins by type.
+PLUGIN_NAME = ddcloud-customerimage
 
 VERSION = 0.1.0
-VERSION_INFO_FILE = ./$(PLUGIN_NAME)/version-info.go
+VERSION_INFO_FILE = ./version-info.go
 
 BIN_DIRECTORY   = _bin
 EXECUTABLE_NAME = packer-builder-$(PLUGIN_NAME)
 DIST_ZIP_PREFIX = $(EXECUTABLE_NAME).v$(VERSION)
 
 REPO_BASE     = github.com/DimensionDataResearch
-REPO_ROOT     = $(REPO_BASE)/packer-builder-ddcloud
+REPO_ROOT     = $(REPO_BASE)/packer-plugins-ddcloud
 PLUGIN_ROOT   = $(REPO_ROOT)/$(PLUGIN_NAME)
 VENDOR_ROOT   = $(REPO_ROOT)/vendor
 
@@ -71,4 +72,4 @@ version: $(VERSION_INFO_FILE)
 
 $(VERSION_INFO_FILE): Makefile
 	@echo "Update version info: v$(VERSION)"
-	@echo "package $(PLUGIN_NAME)\n\n// ProviderVersion is the current version of the $(PLUGIN_NAME) Builder plugin for Packer.\nconst ProviderVersion = \"v$(VERSION) (`git rev-parse HEAD`)\"" > $(VERSION_INFO_FILE)
+	@echo "package plugins\n\n// ProviderVersion is the current version of the CloudControl plugins for Packer.\nconst ProviderVersion = \"v$(VERSION) (`git rev-parse HEAD`)\"" > $(VERSION_INFO_FILE)
