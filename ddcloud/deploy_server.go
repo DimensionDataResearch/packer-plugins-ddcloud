@@ -1,14 +1,16 @@
 package ddcloud
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 )
 
-func deployServer(config Configuration, image compute.Image, networkDomain compute.NetworkDomain, client *compute.Client) (*ServerArtifact, error) {
+func deployServer(config Configuration, image compute.Image, networkDomain compute.NetworkDomain, client *compute.Client) (*compute.Server, error) {
 	deploymentConfiguration := compute.ServerDeploymentConfiguration{
-		Name: config.serverName,
+		Name:        config.serverName,
+		Description: fmt.Sprintf("Temporary server created by Packer for image '%s'", config.TargetImage),
 		Network: compute.VirtualMachineNetwork{
 			NetworkDomainID: config.NetworkDomainID,
 			PrimaryAdapter: compute.VirtualMachineNetworkAdapter{
@@ -28,24 +30,5 @@ func deployServer(config Configuration, image compute.Image, networkDomain compu
 		return nil, err
 	}
 
-	server := resource.(*compute.Server)
-
-	artifact := &ServerArtifact{
-		Server:        *server,
-		NetworkDomain: networkDomain,
-		deleteServer: func() error {
-			deleteError := client.DeleteServer(server.ID)
-			if deleteError != nil {
-				return deleteError
-			}
-
-			return client.WaitForDelete(
-				compute.ResourceTypeServer,
-				server.ID,
-				5*time.Minute,
-			)
-		},
-	}
-
-	return artifact, nil
+	return resource.(*compute.Server), nil
 }

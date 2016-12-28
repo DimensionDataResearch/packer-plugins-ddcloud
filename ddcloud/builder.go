@@ -3,6 +3,7 @@ package ddcloud
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"encoding/base64"
 	"math/rand"
@@ -29,6 +30,7 @@ type Configuration struct {
 	NetworkDomainID string `mapstructure:"networkdomain"`
 	VLANID          string `mapstructure:"vlan"`
 	SourceImage     string `mapstructure:"source_image"`
+	TargetImage     string `mapstructure:"target_image"`
 	uniquenessKey   string
 	serverName      string
 }
@@ -62,6 +64,11 @@ func (config *Configuration) Validate() (err error) {
 	}
 	if config.SourceImage == "" {
 		err = fmt.Errorf("'source_image' has not been specified in configuration")
+
+		return
+	}
+	if config.TargetImage == "" {
+		err = fmt.Errorf("'target_image' has not been specified in configuration")
 
 		return
 	}
@@ -141,20 +148,87 @@ func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) 
 		)
 	}
 
-	serverArtifact, err := deployServer(*config, image, *networkDomain, client)
+	ui.Message(fmt.Sprintf(
+		"Deploying server '%s' in network domain '%s' ('%s')...",
+		config.serverName,
+		networkDomain.Name,
+		networkDomain.ID,
+	))
+
+	server, err := deployServer(*config, image, *networkDomain, client)
 	if err != nil {
 		return nil, err
 	}
 
 	ui.Message(fmt.Sprintf(
 		"Deployed server '%s' ('%s').",
-		serverArtifact.Server.Name,
-		serverArtifact.Server.ID,
+		server.Name,
+		server.ID,
 	))
 
-	// TODO: Create image from server.
+	ui.Message(fmt.Sprintf(
+		"Creating image '%s' from server '%s' ('%s')...",
+		config.TargetImage,
+		server.Name,
+		server.ID,
+	))
 
-	return serverArtifact, nil
+	imageID, err := client.CloneServer(
+		server.ID,
+		config.TargetImage,
+		fmt.Sprintf("%s (created by Packer)", config.TargetImage),
+		false, // preventGuestOSCustomisation
+	)
+	if err != nil {
+		return nil, err
+	}
+	resource, err := client.WaitForServerClone(
+		imageID,
+		15*time.Minute,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	customerImage := resource.(*compute.CustomerImage)
+
+	ui.Message(fmt.Sprintf(
+		"Created customer image '%s' ('%s') from server '%s' ('%s').",
+		customerImage.Name,
+		customerImage.ID,
+		server.Name,
+		server.ID,
+	))
+
+	ui.Message(fmt.Sprintf(
+		"Destroying server '%s' ('%s')...",
+		server.Name,
+		server.ID,
+	))
+
+	err = client.DeleteServer(server.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.WaitForDelete(
+		compute.ResourceTypeServer,
+		server.ID,
+		5*time.Minute,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	imageArtifact := &ImageArtifact{
+		Server:        *server,
+		NetworkDomain: *networkDomain,
+		Image:         *customerImage,
+
+		// TODO: deleteImage.
+	}
+
+	return imageArtifact, nil
 }
 
 // Cancel plugin execution.
