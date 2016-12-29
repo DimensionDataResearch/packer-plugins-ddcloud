@@ -3,9 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
-	"encoding/base64"
+	"encoding/hex"
 	"math/rand"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
@@ -22,60 +21,6 @@ type Builder struct {
 	client *compute.Client
 }
 
-// Configuration represents the configuration for the Builder.
-type Configuration struct {
-	McpRegion       string `mapstructure:"mcp_region"`
-	McpUser         string `mapstructure:"mcp_user"`
-	McpPassword     string `mapstructure:"mcp_password"`
-	NetworkDomainID string `mapstructure:"networkdomain"`
-	VLANID          string `mapstructure:"vlan"`
-	SourceImage     string `mapstructure:"source_image"`
-	TargetImage     string `mapstructure:"target_image"`
-	uniquenessKey   string
-	serverName      string
-}
-
-// Validate determines if the configuration is valid.
-func (config *Configuration) Validate() (err error) {
-	if config.McpRegion == "" {
-		err = fmt.Errorf("'mcp_region' has not been specified in configuration")
-
-		return
-	}
-	if config.McpUser == "" {
-		err = fmt.Errorf("'mcp_user' has not been specified in configuration")
-
-		return
-	}
-	if config.McpPassword == "" {
-		err = fmt.Errorf("'mcp_password' has not been specified in configuration")
-
-		return
-	}
-	if config.NetworkDomainID == "" {
-		err = fmt.Errorf("'networkdomain' has not been specified in configuration")
-
-		return
-	}
-	if config.VLANID == "" {
-		err = fmt.Errorf("'vlan' has not been specified in configuration")
-
-		return
-	}
-	if config.SourceImage == "" {
-		err = fmt.Errorf("'source_image' has not been specified in configuration")
-
-		return
-	}
-	if config.TargetImage == "" {
-		err = fmt.Errorf("'target_image' has not been specified in configuration")
-
-		return
-	}
-
-	return
-}
-
 // Prepare the plugin to run.
 func (builder *Builder) Prepare(configuration ...interface{}) (warnings []string, err error) {
 	if len(configuration) == 0 {
@@ -84,12 +29,12 @@ func (builder *Builder) Prepare(configuration ...interface{}) (warnings []string
 		return
 	}
 
-	uniquenessKeyBytes := make([]byte, 8)
+	uniquenessKeyBytes := make([]byte, 5)
 	_, err = rand.Read(uniquenessKeyBytes)
 	if err != nil {
 		return
 	}
-	uniquenessKey := base64.StdEncoding.EncodeToString(uniquenessKeyBytes)
+	uniquenessKey := hex.EncodeToString(uniquenessKeyBytes)
 
 	builder.config = &Configuration{
 		uniquenessKey: uniquenessKey,
@@ -120,6 +65,10 @@ func (builder *Builder) Prepare(configuration ...interface{}) (warnings []string
 func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packer.Artifact, error) {
 	client := builder.client
 	config := builder.config
+
+	/*
+	 * TODO: Use https://github.com/mitchellh/packer/blob/master/common/step_provision.go (and the machinery that goes with it)
+	 */
 
 	networkDomain, err := client.GetNetworkDomain(config.NetworkDomainID)
 	if err != nil {
@@ -173,24 +122,10 @@ func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) 
 		server.ID,
 	))
 
-	imageID, err := client.CloneServer(
-		server.ID,
-		config.TargetImage,
-		fmt.Sprintf("%s (created by Packer)", config.TargetImage),
-		false, // preventGuestOSCustomisation
-	)
+	customerImage, err := cloneServer(*config, *server, *networkDomain, client)
 	if err != nil {
 		return nil, err
 	}
-	resource, err := client.WaitForServerClone(
-		imageID,
-		15*time.Minute,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	customerImage := resource.(*compute.CustomerImage)
 
 	ui.Message(fmt.Sprintf(
 		"Created customer image '%s' ('%s') from server '%s' ('%s').",
@@ -206,16 +141,7 @@ func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) 
 		server.ID,
 	))
 
-	err = client.DeleteServer(server.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = client.WaitForDelete(
-		compute.ResourceTypeServer,
-		server.ID,
-		5*time.Minute,
-	)
+	err = destroyServer(server.ID, client)
 	if err != nil {
 		return nil, err
 	}

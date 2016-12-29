@@ -5,6 +5,8 @@ import (
 	"os"
 	"path"
 
+	"log"
+
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud"
 	"github.com/mitchellh/packer/packer/plugin"
 )
@@ -18,8 +20,11 @@ func main() {
 
 	server, err := plugin.Server()
 	if err != nil {
-		panic(err)
+		log.Printf("Error starting plugin server: '%s'", err)
+
+		return
 	}
 
 	server.RegisterBuilder(new(Builder))
+	server.Serve()
 }
