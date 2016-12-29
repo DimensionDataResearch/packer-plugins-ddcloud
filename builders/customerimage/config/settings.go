@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/helper/communicator"
@@ -28,19 +29,31 @@ type Settings struct {
 // Validate determines if the settings is valid.
 func (settings *Settings) Validate() (err error) {
 	if settings.McpRegion == "" {
-		err = packer.MultiErrorAppend(err,
-			fmt.Errorf("'mcp_region' has not been specified in settings"),
-		)
+		settings.McpRegion = os.Getenv("MCP_REGION")
+
+		if settings.McpRegion == "" {
+			err = packer.MultiErrorAppend(err,
+				fmt.Errorf("'mcp_region' has not been specified in settings and the MCP_REGION environment variable has not been set"),
+			)
+		}
 	}
 	if settings.McpUser == "" {
-		err = packer.MultiErrorAppend(err,
-			fmt.Errorf("'mcp_user' has not been specified in settings"),
-		)
+		settings.McpUser = os.Getenv("MCP_USER")
+
+		if settings.McpUser == "" {
+			err = packer.MultiErrorAppend(err,
+				fmt.Errorf("'mcp_user' has not been specified in settings and the MCP_USER environment variable has not been set"),
+			)
+		}
 	}
 	if settings.McpPassword == "" {
-		err = packer.MultiErrorAppend(err,
-			fmt.Errorf("'mcp_password' has not been specified in settings"),
-		)
+		settings.McpPassword = os.Getenv("MCP_PASSWORD")
+
+		if settings.McpPassword == "" {
+			err = packer.MultiErrorAppend(err,
+				fmt.Errorf("'mcp_password' has not been specified in settings and the MCP_PASSWORD environment variable has not been set"),
+			)
+		}
 	}
 	if settings.DatacenterID == "" {
 		err = packer.MultiErrorAppend(err,
