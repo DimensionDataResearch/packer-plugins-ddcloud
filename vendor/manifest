@@ -8,6 +8,14 @@
 			"revision": "bfdb1a85537d60bc7e954e600c250219ea497417",
 			"branch": "master",
 			"notests": true
+		},
+		{
+			"importpath": "github.com/mitchellh/multistep",
+			"repository": "https://github.com/mitchellh/multistep",
+			"vcs": "git",
+			"revision": "162146fc57112954184d90266f4733e900ed05a5",
+			"branch": "master",
+			"notests": true
 		}
 	]
 }

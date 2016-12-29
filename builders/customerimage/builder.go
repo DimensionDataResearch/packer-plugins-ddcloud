@@ -8,6 +8,7 @@ import (
 	"math/rand"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
 	"github.com/mitchellh/mapstructure"
 	"github.com/mitchellh/packer/packer"
 )
@@ -17,14 +18,14 @@ const BuilderID = "dimension-data-research.ddcloud"
 
 // Builder is the Builder plugin for Packer.
 type Builder struct {
-	config *Configuration
-	client *compute.Client
+	settings *config.Settings
+	client   *compute.Client
 }
 
 // Prepare the plugin to run.
-func (builder *Builder) Prepare(configuration ...interface{}) (warnings []string, err error) {
-	if len(configuration) == 0 {
-		err = fmt.Errorf("No configuration")
+func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err error) {
+	if len(settings) == 0 {
+		err = fmt.Errorf("No settings")
 
 		return
 	}
@@ -36,23 +37,23 @@ func (builder *Builder) Prepare(configuration ...interface{}) (warnings []string
 	}
 	uniquenessKey := hex.EncodeToString(uniquenessKeyBytes)
 
-	builder.config = &Configuration{
-		uniquenessKey: uniquenessKey,
-		serverName:    fmt.Sprintf("packer-build-%s", uniquenessKey),
+	builder.settings = &config.Settings{
+		UniquenessKey: uniquenessKey,
+		ServerName:    fmt.Sprintf("packer-build-%s", uniquenessKey),
 	}
-	err = mapstructure.Decode(configuration[0], builder.config)
+	err = mapstructure.Decode(settings[0], builder.settings)
 	if err != nil {
 		return
 	}
 
-	err = builder.config.Validate()
+	err = builder.settings.Validate()
 	if err != nil {
 		return
 	}
 	builder.client = compute.NewClient(
-		builder.config.McpRegion,
-		builder.config.McpUser,
-		builder.config.McpPassword,
+		builder.settings.McpRegion,
+		builder.settings.McpUser,
+		builder.settings.McpPassword,
 	)
 	if os.Getenv("MCP_EXTENDED_LOGGING") != "" {
 		builder.client.EnableExtendedLogging()
@@ -64,47 +65,47 @@ func (builder *Builder) Prepare(configuration ...interface{}) (warnings []string
 // Run the plugin.
 func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packer.Artifact, error) {
 	client := builder.client
-	config := builder.config
+	settings := builder.settings
 
 	/*
 	 * TODO: Use https://github.com/mitchellh/packer/blob/master/common/step_provision.go (and the machinery that goes with it)
 	 */
 
-	networkDomain, err := client.GetNetworkDomain(config.NetworkDomainID)
+	networkDomain, err := client.GetNetworkDomain(settings.NetworkDomainID)
 	if err != nil {
 		return nil, err
 	}
 	if networkDomain == nil {
-		return nil, fmt.Errorf("Network domain '%s' not found.", config.NetworkDomainID)
+		return nil, fmt.Errorf("Network domain '%s' not found.", settings.NetworkDomainID)
 	}
 
 	ui.Message(fmt.Sprintf(
 		"Deploy server '%s' from image '%s' in network domain '%s' (datacenter '%s').",
-		config.serverName,
-		builder.config.SourceImage,
+		settings.ServerName,
+		settings.SourceImage,
 		networkDomain.Name,
 		networkDomain.DatacenterID,
 	))
 
-	image, err := resolveServerImage(config.SourceImage, networkDomain.DatacenterID, client)
+	image, err := resolveServerImage(settings.SourceImage, networkDomain.DatacenterID, client)
 	if err != nil {
 		return nil, err
 	}
 	if image == nil {
 		return nil, fmt.Errorf("Cannot find source image named '%s' in datacenter '%s'",
-			config.SourceImage,
+			settings.SourceImage,
 			networkDomain.DatacenterID,
 		)
 	}
 
 	ui.Message(fmt.Sprintf(
 		"Deploying server '%s' in network domain '%s' ('%s')...",
-		config.serverName,
+		settings.ServerName,
 		networkDomain.Name,
 		networkDomain.ID,
 	))
 
-	server, err := deployServer(*config, image, *networkDomain, client)
+	server, err := deployServer(*settings, image, *networkDomain, client)
 	if err != nil {
 		return nil, err
 	}
@@ -117,12 +118,12 @@ func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) 
 
 	ui.Message(fmt.Sprintf(
 		"Creating image '%s' from server '%s' ('%s')...",
-		config.TargetImage,
+		settings.TargetImage,
 		server.Name,
 		server.ID,
 	))
 
-	customerImage, err := cloneServer(*config, *server, *networkDomain, client)
+	customerImage, err := cloneServer(*settings, *server, *networkDomain, client)
 	if err != nil {
 		return nil, err
 	}

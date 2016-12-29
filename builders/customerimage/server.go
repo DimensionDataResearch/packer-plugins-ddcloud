@@ -5,17 +5,18 @@ import (
 	"time"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
 )
 
-func deployServer(config Configuration, image compute.Image, networkDomain compute.NetworkDomain, client *compute.Client) (*compute.Server, error) {
+func deployServer(settings config.Settings, image compute.Image, networkDomain compute.NetworkDomain, client *compute.Client) (*compute.Server, error) {
 	deploymentConfiguration := compute.ServerDeploymentConfiguration{
-		Name:                  config.serverName,
-		Description:           fmt.Sprintf("Temporary server created by Packer for image '%s'", config.TargetImage),
-		AdministratorPassword: config.uniquenessKey,
+		Name:                  settings.ServerName,
+		Description:           fmt.Sprintf("Temporary server created by Packer for image '%s'", settings.TargetImage),
+		AdministratorPassword: settings.UniquenessKey,
 		Network: compute.VirtualMachineNetwork{
-			NetworkDomainID: config.NetworkDomainID,
+			NetworkDomainID: settings.NetworkDomainID,
 			PrimaryAdapter: compute.VirtualMachineNetworkAdapter{
-				VLANID: &config.VLANID,
+				VLANID: &settings.VLANID,
 			},
 		},
 		Start: false,
@@ -50,12 +51,12 @@ func destroyServer(serverID string, client *compute.Client) error {
 }
 
 // Clone a server to create a customer image.
-func cloneServer(config Configuration, server compute.Server, networkDomain compute.NetworkDomain, client *compute.Client) (customerImage *compute.CustomerImage, err error) {
+func cloneServer(settings config.Settings, server compute.Server, networkDomain compute.NetworkDomain, client *compute.Client) (customerImage *compute.CustomerImage, err error) {
 	var imageID string
 	imageID, err = client.CloneServer(
 		server.ID,
-		config.TargetImage,
-		fmt.Sprintf("%s (created by Packer)", config.TargetImage),
+		settings.TargetImage,
+		fmt.Sprintf("%s (created by Packer)", settings.TargetImage),
 		false, // preventGuestOSCustomisation
 	)
 	if err != nil {
