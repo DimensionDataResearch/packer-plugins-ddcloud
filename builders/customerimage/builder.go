@@ -13,6 +13,7 @@ import (
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/steps"
 	"github.com/mitchellh/mapstructure"
 	"github.com/mitchellh/multistep"
+	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/packer"
 )
 
@@ -67,6 +68,7 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 			steps.ResolveNetworkDomain{},
 			steps.ResolveSourceImage{},
 			steps.DeployServer{},
+			common.StepProvision{},
 			steps.CloneServer{},
 			steps.DestroyServer{},
 		},
