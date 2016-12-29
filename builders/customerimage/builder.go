@@ -15,13 +15,18 @@ import (
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/packer"
+	"github.com/mitchellh/packer/template/interpolate"
+
+	confighelper "github.com/mitchellh/packer/helper/config"
 )
 
 // Builder is the Builder plugin for Packer.
 type Builder struct {
-	settings *config.Settings
-	client   *compute.Client
-	runner   multistep.Runner
+	packerConfig         *common.PackerConfig
+	interpolationContext interpolate.Context
+	settings             *config.Settings
+	client               *compute.Client
+	runner               multistep.Runner
 }
 
 // Prepare the plugin to run.
@@ -32,13 +37,18 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 		return
 	}
 
-	uniquenessKeyBytes := make([]byte, 5)
-	_, err = rand.Read(uniquenessKeyBytes)
+	// Packer-specific configuration.
+	builder.packerConfig = &common.PackerConfig{}
+	err = confighelper.Decode(builder.packerConfig, &confighelper.DecodeOpts{
+		Interpolate:        true,
+		InterpolateContext: &builder.interpolationContext,
+	}, settings...)
 	if err != nil {
 		return
 	}
-	uniquenessKey := hex.EncodeToString(uniquenessKeyBytes)
 
+	// Builder settings.
+	uniquenessKey := createUniquenessKey()
 	builder.settings = &config.Settings{
 		UniquenessKey: uniquenessKey,
 		ServerName:    fmt.Sprintf("packer-build-%s", uniquenessKey),
@@ -68,7 +78,7 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 			steps.ResolveNetworkDomain{},
 			steps.ResolveSourceImage{},
 			steps.DeployServer{},
-			common.StepProvision{},
+			steps.Provision{},
 			steps.CloneServer{},
 			steps.DestroyServer{},
 		},
@@ -85,6 +95,7 @@ func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) 
 	stepState := &multistep.BasicStateBag{}
 	stepState.Put("ui", ui)
 	stepState.Put("hook", hook)
+	stepState.Put("config", builder.packerConfig)
 	stepState.Put("settings", settings)
 	stepState.Put("client", client)
 	builder.runner.Run(stepState)
@@ -109,4 +120,11 @@ func (builder *Builder) Cancel() {
 	if builder.client != nil {
 		builder.client.Cancel()
 	}
+}
+
+func createUniquenessKey() string {
+	uniquenessKeyBytes := make([]byte, 5)
+	rand.Read(uniquenessKeyBytes)
+
+	return hex.EncodeToString(uniquenessKeyBytes)
 }

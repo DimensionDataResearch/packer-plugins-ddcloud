@@ -41,4 +41,4 @@ func (step ResolveNetworkDomain) Run(state multistep.StateBag) multistep.StepAct
 func (step ResolveNetworkDomain) Cleanup(state multistep.StateBag) {
 }
 
-var _ multistep.Step = &ResolveSourceImage{}
+var _ multistep.Step = &ResolveNetworkDomain{}

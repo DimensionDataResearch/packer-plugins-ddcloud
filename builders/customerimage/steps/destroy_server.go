@@ -63,4 +63,4 @@ func (step DestroyServer) Cleanup(state multistep.StateBag) {
 	// TODO: Destroy server.
 }
 
-var _ multistep.Step = &DeployServer{}
+var _ multistep.Step = &DestroyServer{}

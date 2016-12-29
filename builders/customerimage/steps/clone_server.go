@@ -87,4 +87,4 @@ func (step CloneServer) Cleanup(state multistep.StateBag) {
 	// TODO: Clone server.
 }
 
-var _ multistep.Step = &DeployServer{}
+var _ multistep.Step = &CloneServer{}
