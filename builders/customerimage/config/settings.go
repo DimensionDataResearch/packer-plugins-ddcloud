@@ -14,16 +14,17 @@ type Settings struct {
 	PackerConfig       common.PackerConfig `mapstructure:",squash"`
 	CommunicatorConfig communicator.Config `mapstructure:",squash"`
 
-	McpRegion         string `mapstructure:"mcp_region"`
-	McpUser           string `mapstructure:"mcp_user"`
-	McpPassword       string `mapstructure:"mcp_password"`
-	DatacenterID      string `mapstructure:"datacenter"`
-	NetworkDomainName string `mapstructure:"networkdomain"`
-	VLANName          string `mapstructure:"vlan"`
-	SourceImage       string `mapstructure:"source_image"`
-	TargetImage       string `mapstructure:"target_image"`
-	UniquenessKey     string
-	ServerName        string
+	McpRegion            string `mapstructure:"mcp_region"`
+	McpUser              string `mapstructure:"mcp_user"`
+	McpPassword          string `mapstructure:"mcp_password"`
+	DatacenterID         string `mapstructure:"datacenter"`
+	NetworkDomainName    string `mapstructure:"networkdomain"`
+	VLANName             string `mapstructure:"vlan"`
+	SourceImage          string `mapstructure:"source_image"`
+	TargetImage          string `mapstructure:"target_image"`
+	InitialAdminPassword string `mapstructure:"initial_admin_password"`
+	UniquenessKey        string
+	ServerName           string
 }
 
 // Validate determines if the settings is valid.
@@ -81,6 +82,10 @@ func (settings *Settings) Validate() (err error) {
 		)
 	}
 
+	if settings.InitialAdminPassword == "" {
+		settings.InitialAdminPassword = settings.UniquenessKey // NOT secure.
+	}
+
 	// Communicator defaults.
 	if settings.CommunicatorConfig.Type == "" {
 		settings.CommunicatorConfig.Type = "none"
@@ -92,7 +97,7 @@ func (settings *Settings) Validate() (err error) {
 		settings.CommunicatorConfig.SSHUsername = "root"
 	}
 	if settings.CommunicatorConfig.SSHPassword == "" {
-		settings.CommunicatorConfig.SSHPassword = settings.UniquenessKey
+		settings.CommunicatorConfig.SSHPassword = settings.InitialAdminPassword
 	}
 	if settings.CommunicatorConfig.WinRMHost == "" {
 		settings.CommunicatorConfig.WinRMHost = settings.ServerName
@@ -101,7 +106,7 @@ func (settings *Settings) Validate() (err error) {
 		settings.CommunicatorConfig.WinRMUser = "Administrator"
 	}
 	if settings.CommunicatorConfig.WinRMPassword == "" {
-		settings.CommunicatorConfig.WinRMHost = settings.UniquenessKey
+		settings.CommunicatorConfig.WinRMHost = settings.InitialAdminPassword
 	}
 
 	return
