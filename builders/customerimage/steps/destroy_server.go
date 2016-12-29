@@ -15,7 +15,7 @@ type DestroyServer struct{}
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step DestroyServer) Run(state multistep.StateBag) multistep.StepAction {
+func (step *DestroyServer) Run(state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 
 	client := state.Get("client").(*compute.Client)
@@ -59,7 +59,7 @@ func (step DestroyServer) Run(state multistep.StateBag) multistep.StepAction {
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step DestroyServer) Cleanup(state multistep.StateBag) {
+func (step *DestroyServer) Cleanup(state multistep.StateBag) {
 	// TODO: Destroy server.
 }
 

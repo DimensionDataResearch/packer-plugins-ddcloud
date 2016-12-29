@@ -11,9 +11,9 @@ import (
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/artifacts"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/steps"
-	"github.com/mitchellh/mapstructure"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common"
+	"github.com/mitchellh/packer/helper/communicator"
 	"github.com/mitchellh/packer/packer"
 	"github.com/mitchellh/packer/template/interpolate"
 
@@ -22,9 +22,8 @@ import (
 
 // Builder is the Builder plugin for Packer.
 type Builder struct {
-	packerConfig         *common.PackerConfig
-	interpolationContext interpolate.Context
 	settings             *config.Settings
+	interpolationContext interpolate.Context
 	client               *compute.Client
 	runner               multistep.Runner
 }
@@ -37,9 +36,9 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 		return
 	}
 
-	// Packer-specific configuration.
-	builder.packerConfig = &common.PackerConfig{}
-	err = confighelper.Decode(builder.packerConfig, &confighelper.DecodeOpts{
+	// Builder settings.
+	builder.settings = &config.Settings{}
+	err = confighelper.Decode(builder.settings, &confighelper.DecodeOpts{
 		Interpolate:        true,
 		InterpolateContext: &builder.interpolationContext,
 	}, settings...)
@@ -47,20 +46,16 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 		return
 	}
 
-	// Builder settings.
-	uniquenessKey := createUniquenessKey()
-	builder.settings = &config.Settings{
-		UniquenessKey: uniquenessKey,
-		ServerName:    fmt.Sprintf("packer-build-%s", uniquenessKey),
-	}
-	err = mapstructure.Decode(settings[0], builder.settings)
+	err = builder.settings.Validate()
 	if err != nil {
 		return
 	}
 
-	err = builder.settings.Validate()
-	if err != nil {
-		return
+	builder.settings.UniquenessKey = createUniquenessKey()
+	builder.settings.ServerName = fmt.Sprintf("packer-build-%s", builder.settings.UniquenessKey)
+
+	if builder.settings.CommunicatorConfig.Type == "" {
+		builder.settings.CommunicatorConfig.Type = "none"
 	}
 
 	builder.client = compute.NewClient(
@@ -75,12 +70,16 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 	// Configure builder execution logic.
 	builder.runner = &multistep.BasicRunner{
 		Steps: []multistep.Step{
-			steps.ResolveNetworkDomain{},
-			steps.ResolveSourceImage{},
-			steps.DeployServer{},
-			steps.Provision{},
-			steps.CloneServer{},
-			steps.DestroyServer{},
+			&steps.ResolveNetworkDomain{},
+			&steps.ResolveVLAN{},
+			&steps.ResolveSourceImage{},
+			&steps.DeployServer{},
+			&communicator.StepConnect{
+				Config: &builder.settings.CommunicatorConfig,
+			},
+			&common.StepProvision{},
+			&steps.CloneServer{},
+			&steps.DestroyServer{},
 		},
 	}
 
@@ -90,12 +89,13 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 // Run the plugin.
 func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packer.Artifact, error) {
 	settings := builder.settings
+	packerConfig := &settings.PackerConfig
 	client := builder.client
 
 	stepState := &multistep.BasicStateBag{}
 	stepState.Put("ui", ui)
 	stepState.Put("hook", hook)
-	stepState.Put("config", builder.packerConfig)
+	stepState.Put("config", packerConfig)
 	stepState.Put("settings", settings)
 	stepState.Put("client", client)
 	builder.runner.Run(stepState)

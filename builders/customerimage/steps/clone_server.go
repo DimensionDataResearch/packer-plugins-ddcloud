@@ -17,7 +17,7 @@ type CloneServer struct{}
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step CloneServer) Run(state multistep.StateBag) multistep.StepAction {
+func (step *CloneServer) Run(state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 
 	settings := state.Get("settings").(*config.Settings)
@@ -83,7 +83,7 @@ func (step CloneServer) Run(state multistep.StateBag) multistep.StepAction {
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step CloneServer) Cleanup(state multistep.StateBag) {
+func (step *CloneServer) Cleanup(state multistep.StateBag) {
 	// TODO: Clone server.
 }
 

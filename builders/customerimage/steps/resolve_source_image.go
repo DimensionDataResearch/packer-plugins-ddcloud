@@ -15,7 +15,7 @@ type ResolveSourceImage struct{}
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step ResolveSourceImage) Run(state multistep.StateBag) multistep.StepAction {
+func (step *ResolveSourceImage) Run(state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 
 	settings := state.Get("settings").(*config.Settings)
@@ -67,7 +67,7 @@ func (step ResolveSourceImage) Run(state multistep.StateBag) multistep.StepActio
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step ResolveSourceImage) Cleanup(state multistep.StateBag) {
+func (step *ResolveSourceImage) Cleanup(state multistep.StateBag) {
 }
 
 var _ multistep.Step = &ResolveSourceImage{}

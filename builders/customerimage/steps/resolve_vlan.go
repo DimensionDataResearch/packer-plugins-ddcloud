@@ -9,38 +9,41 @@ import (
 	"github.com/mitchellh/packer/packer"
 )
 
-// ResolveNetworkDomain is the step that resolves the target network domain from CloudControl.
-type ResolveNetworkDomain struct{}
+// ResolveVLAN is the step that resolves the target VLAN by name from CloudControl.
+type ResolveVLAN struct{}
 
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step *ResolveNetworkDomain) Run(state multistep.StateBag) multistep.StepAction {
+func (step *ResolveVLAN) Run(state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 
 	settings := state.Get("settings").(*config.Settings)
 	client := state.Get("client").(*compute.Client)
+	networkDomain := state.Get("network_domain").(*compute.NetworkDomain)
 
-	networkDomain, err := client.GetNetworkDomainByName(
-		settings.NetworkDomainName,
-		settings.DatacenterID,
+	vlan, err := client.GetVLANByName(
+		settings.VLANName,
+		networkDomain.ID,
 	)
 	if err != nil {
 		ui.Error(err.Error())
 
 		return multistep.ActionHalt
 	}
-	if networkDomain == nil {
+	if vlan == nil {
 		ui.Error(fmt.Sprintf(
-			"Unable to find network domain '%s' in datacenter '%s'.",
-			settings.NetworkDomainName,
+			"Unable to find VLAN '%s' in network domain '%s' ('%s') in datacenter '%s'.",
+			settings.VLANName,
+			networkDomain.Name,
+			networkDomain.ID,
 			settings.DatacenterID,
 		))
 
 		return multistep.ActionHalt
 	}
 
-	state.Put("network_domain", networkDomain)
+	state.Put("vlan", vlan)
 
 	return multistep.ActionContinue
 }
@@ -52,7 +55,7 @@ func (step *ResolveNetworkDomain) Run(state multistep.StateBag) multistep.StepAc
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step *ResolveNetworkDomain) Cleanup(state multistep.StateBag) {
+func (step *ResolveVLAN) Cleanup(state multistep.StateBag) {
 }
 
-var _ multistep.Step = &ResolveNetworkDomain{}
+var _ multistep.Step = &ResolveVLAN{}

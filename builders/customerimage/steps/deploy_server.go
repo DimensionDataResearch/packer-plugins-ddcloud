@@ -16,12 +16,13 @@ type DeployServer struct{}
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step DeployServer) Run(state multistep.StateBag) multistep.StepAction {
+func (step *DeployServer) Run(state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 
 	settings := state.Get("settings").(*config.Settings)
 	client := state.Get("client").(*compute.Client)
 	networkDomain := state.Get("network_domain").(*compute.NetworkDomain)
+	vlan := state.Get("vlan").(*compute.VLAN)
 	image := state.Get("source_image").(compute.Image)
 
 	ui.Message(fmt.Sprintf(
@@ -38,7 +39,7 @@ func (step DeployServer) Run(state multistep.StateBag) multistep.StepAction {
 		Network: compute.VirtualMachineNetwork{
 			NetworkDomainID: networkDomain.ID,
 			PrimaryAdapter: compute.VirtualMachineNetworkAdapter{
-				VLANID: &settings.VLANID,
+				VLANID: &vlan.ID,
 			},
 		},
 		Start: false,
@@ -80,7 +81,7 @@ func (step DeployServer) Run(state multistep.StateBag) multistep.StepAction {
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step DeployServer) Cleanup(state multistep.StateBag) {
+func (step *DeployServer) Cleanup(state multistep.StateBag) {
 	// TODO: Destroy server.
 }
 
