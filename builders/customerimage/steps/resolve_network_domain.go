@@ -9,7 +9,7 @@ import (
 	"github.com/mitchellh/packer/packer"
 )
 
-// ResolveNetworkDomain is the step that resolves the target network domain from CloudControl.
+// ResolveNetworkDomain is the step that resolves the target network domain by name from CloudControl.
 type ResolveNetworkDomain struct{}
 
 // Run is called to perform the step's action.
