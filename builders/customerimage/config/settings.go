@@ -1,6 +1,10 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/mitchellh/packer/packer"
+)
 
 // Settings represents the settings for the Builder.
 type Settings struct {
@@ -18,39 +22,39 @@ type Settings struct {
 // Validate determines if the settings is valid.
 func (settings *Settings) Validate() (err error) {
 	if settings.McpRegion == "" {
-		err = fmt.Errorf("'mcp_region' has not been specified in settings")
-
-		return
+		err = packer.MultiErrorAppend(err,
+			fmt.Errorf("'mcp_region' has not been specified in settings"),
+		)
 	}
 	if settings.McpUser == "" {
-		err = fmt.Errorf("'mcp_user' has not been specified in settings")
-
-		return
+		err = packer.MultiErrorAppend(err,
+			fmt.Errorf("'mcp_user' has not been specified in settings"),
+		)
 	}
 	if settings.McpPassword == "" {
-		err = fmt.Errorf("'mcp_password' has not been specified in settings")
-
-		return
+		err = packer.MultiErrorAppend(err,
+			fmt.Errorf("'mcp_password' has not been specified in settings"),
+		)
 	}
 	if settings.NetworkDomainID == "" {
-		err = fmt.Errorf("'networkdomain' has not been specified in settings")
-
-		return
+		err = packer.MultiErrorAppend(err,
+			fmt.Errorf("'networkdomain' has not been specified in settings"),
+		)
 	}
 	if settings.VLANID == "" {
-		err = fmt.Errorf("'vlan' has not been specified in settings")
-
-		return
+		err = packer.MultiErrorAppend(err,
+			fmt.Errorf("'vlan' has not been specified in settings"),
+		)
 	}
 	if settings.SourceImage == "" {
-		err = fmt.Errorf("'source_image' has not been specified in settings")
-
-		return
+		err = packer.MultiErrorAppend(err,
+			fmt.Errorf("'source_image' has not been specified in settings"),
+		)
 	}
 	if settings.TargetImage == "" {
-		err = fmt.Errorf("'target_image' has not been specified in settings")
-
-		return
+		err = packer.MultiErrorAppend(err,
+			fmt.Errorf("'target_image' has not been specified in settings"),
+		)
 	}
 
 	return

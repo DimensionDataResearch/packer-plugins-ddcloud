@@ -5,70 +5,73 @@ import (
 	"time"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/artifacts"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
 )
 
-// DeployServer is the step that deploys the target server in CloudControl.
-type DeployServer struct{}
+// CloneServer is the step that clones the target server in CloudControl.
+type CloneServer struct{}
 
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step DeployServer) Run(state multistep.StateBag) multistep.StepAction {
+func (step CloneServer) Run(state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 
 	settings := state.Get("settings").(*config.Settings)
 	client := state.Get("client").(*compute.Client)
 	networkDomain := state.Get("network_domain").(*compute.NetworkDomain)
-	image := state.Get("source_image").(compute.Image)
+	server := state.Get("server").(*compute.Server)
 
 	ui.Message(fmt.Sprintf(
-		"Deploying server '%s' in network domain '%s' ('%s')...",
-		settings.ServerName,
-		networkDomain.Name,
-		networkDomain.ID,
-	))
-
-	deploymentConfiguration := compute.ServerDeploymentConfiguration{
-		Name:                  settings.ServerName,
-		Description:           fmt.Sprintf("Temporary server created by Packer for image '%s'", settings.TargetImage),
-		AdministratorPassword: settings.UniquenessKey,
-		Network: compute.VirtualMachineNetwork{
-			NetworkDomainID: networkDomain.ID,
-			PrimaryAdapter: compute.VirtualMachineNetworkAdapter{
-				VLANID: &settings.VLANID,
-			},
-		},
-		Start: false,
-	}
-	image.ApplyTo(&deploymentConfiguration)
-
-	serverID, err := client.DeployServer(deploymentConfiguration)
-	if err != nil {
-		ui.Error(err.Error())
-
-		return multistep.ActionHalt
-	}
-
-	resource, err := client.WaitForDeploy(compute.ResourceTypeServer, serverID, 20*time.Minute)
-	if err != nil {
-		ui.Error(err.Error())
-
-		return multistep.ActionHalt
-	}
-
-	server := resource.(*compute.Server)
-	state.Put("server", server)
-
-	ui.Message(fmt.Sprintf(
-		"Deployed server '%s' ('%s') in network domain '%s' ('%s')...",
+		"Cloning server '%s' ('%s')...",
 		server.Name,
 		server.ID,
-		networkDomain.Name,
-		networkDomain.ID,
 	))
+
+	imageID, err := client.CloneServer(
+		server.ID,
+		settings.TargetImage,
+		fmt.Sprintf("%s (created by Packer)", settings.TargetImage),
+		false, // preventGuestOSCustomisation
+	)
+	if err != nil {
+		ui.Error(err.Error())
+
+		return multistep.ActionHalt
+	}
+
+	var resource compute.Resource
+	resource, err = client.WaitForServerClone(
+		imageID,
+		15*time.Minute,
+	)
+	if err != nil {
+		ui.Error(err.Error())
+
+		return multistep.ActionHalt
+	}
+
+	customerImage := resource.(*compute.CustomerImage)
+	state.Put("target_image", customerImage)
+
+	ui.Message(fmt.Sprintf(
+		"Cloned server '%s' ('%s') to customer image '%s' ('%s') in datacenter '%s'.",
+		server.Name,
+		server.ID,
+		customerImage.Name,
+		customerImage.ID,
+		customerImage.DataCenterID,
+	))
+
+	imageArtifact := &artifacts.Image{
+		Server:        *server,
+		NetworkDomain: *networkDomain,
+		Image:         *customerImage,
+	}
+	state.Put("target_image_artifact", imageArtifact)
 
 	return multistep.ActionContinue
 }
@@ -80,8 +83,8 @@ func (step DeployServer) Run(state multistep.StateBag) multistep.StepAction {
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step DeployServer) Cleanup(state multistep.StateBag) {
-	// TODO: Destroy server.
+func (step CloneServer) Cleanup(state multistep.StateBag) {
+	// TODO: Clone server.
 }
 
 var _ multistep.Step = &DeployServer{}

@@ -18,7 +18,7 @@ type ResolveSourceImage struct{}
 func (step ResolveSourceImage) Run(state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 
-	settings := state.Get("config").(*config.Settings)
+	settings := state.Get("settings").(*config.Settings)
 	client := state.Get("client").(*compute.Client)
 	networkDomain := state.Get("network_domain").(*compute.NetworkDomain)
 
@@ -30,9 +30,10 @@ func (step ResolveSourceImage) Run(state multistep.StateBag) multistep.StepActio
 
 		return multistep.ActionHalt
 	}
-	if osImage == nil {
+	if osImage != nil {
 		image = osImage
 	} else {
+		// Fall back to customer image.
 		customerImage, err := client.FindCustomerImage(settings.SourceImage, networkDomain.DatacenterID)
 		if err != nil {
 			ui.Error(err.Error())
@@ -45,7 +46,11 @@ func (step ResolveSourceImage) Run(state multistep.StateBag) multistep.StepActio
 	}
 
 	if image == nil {
-		ui.Error(fmt.Sprintf(""))
+		ui.Error(fmt.Sprintf(
+			"Image '%s' not found in datacenter '%s'.",
+			settings.SourceImage,
+			networkDomain.DatacenterID,
+		))
 
 		return multistep.ActionHalt
 	}

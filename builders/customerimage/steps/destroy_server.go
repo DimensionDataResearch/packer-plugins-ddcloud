@@ -1,32 +1,53 @@
 package steps
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
 )
 
-// ResolveNetworkDomain is the step that resolves the target network domain from CloudControl.
-type ResolveNetworkDomain struct{}
+// DestroyServer is the step that destroys the target server in CloudControl.
+type DestroyServer struct{}
 
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step ResolveNetworkDomain) Run(state multistep.StateBag) multistep.StepAction {
+func (step DestroyServer) Run(state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 
-	settings := state.Get("settings").(*config.Settings)
 	client := state.Get("client").(*compute.Client)
+	server := state.Get("server").(*compute.Server)
 
-	networkDomain, err := client.GetNetworkDomain(settings.NetworkDomainID)
+	ui.Message(fmt.Sprintf(
+		"Destroying server '%s' ('%s')...",
+		server.Name,
+		server.ID,
+	))
+
+	err := client.DeleteServer(server.ID)
 	if err != nil {
 		ui.Error(err.Error())
 
 		return multistep.ActionHalt
 	}
 
-	state.Put("network_domain", networkDomain)
+	err = client.WaitForDelete(compute.ResourceTypeServer, server.ID, 20*time.Minute)
+	if err != nil {
+		ui.Error(err.Error())
+
+		return multistep.ActionHalt
+	}
+
+	ui.Message(fmt.Sprintf(
+		"Destroyed server '%s' ('%s').",
+		server.Name,
+		server.ID,
+	))
+
+	state.Put("server", nil)
 
 	return multistep.ActionContinue
 }
@@ -38,7 +59,8 @@ func (step ResolveNetworkDomain) Run(state multistep.StateBag) multistep.StepAct
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step ResolveNetworkDomain) Cleanup(state multistep.StateBag) {
+func (step DestroyServer) Cleanup(state multistep.StateBag) {
+	// TODO: Destroy server.
 }
 
-var _ multistep.Step = &ResolveSourceImage{}
+var _ multistep.Step = &DeployServer{}

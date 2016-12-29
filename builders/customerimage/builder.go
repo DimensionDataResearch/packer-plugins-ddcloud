@@ -8,18 +8,19 @@ import (
 	"math/rand"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/artifacts"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/steps"
 	"github.com/mitchellh/mapstructure"
+	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
 )
-
-// BuilderID is the unique Id for the ddcloud builder
-const BuilderID = "dimension-data-research.ddcloud"
 
 // Builder is the Builder plugin for Packer.
 type Builder struct {
 	settings *config.Settings
 	client   *compute.Client
+	runner   multistep.Runner
 }
 
 // Prepare the plugin to run.
@@ -50,6 +51,7 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 	if err != nil {
 		return
 	}
+
 	builder.client = compute.NewClient(
 		builder.settings.McpRegion,
 		builder.settings.McpUser,
@@ -59,101 +61,43 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 		builder.client.EnableExtendedLogging()
 	}
 
+	// Configure builder execution logic.
+	builder.runner = &multistep.BasicRunner{
+		Steps: []multistep.Step{
+			steps.ResolveNetworkDomain{},
+			steps.ResolveSourceImage{},
+			steps.DeployServer{},
+			steps.CloneServer{},
+			steps.DestroyServer{},
+		},
+	}
+
 	return
 }
 
 // Run the plugin.
 func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packer.Artifact, error) {
-	client := builder.client
 	settings := builder.settings
+	client := builder.client
 
-	/*
-	 * TODO: Use https://github.com/mitchellh/packer/blob/master/common/step_provision.go (and the machinery that goes with it)
-	 */
+	stepState := &multistep.BasicStateBag{}
+	stepState.Put("ui", ui)
+	stepState.Put("hook", hook)
+	stepState.Put("settings", settings)
+	stepState.Put("client", client)
+	builder.runner.Run(stepState)
 
-	networkDomain, err := client.GetNetworkDomain(settings.NetworkDomainID)
-	if err != nil {
-		return nil, err
-	}
-	if networkDomain == nil {
-		return nil, fmt.Errorf("Network domain '%s' not found.", settings.NetworkDomainID)
-	}
-
-	ui.Message(fmt.Sprintf(
-		"Deploy server '%s' from image '%s' in network domain '%s' (datacenter '%s').",
-		settings.ServerName,
-		settings.SourceImage,
-		networkDomain.Name,
-		networkDomain.DatacenterID,
-	))
-
-	image, err := resolveServerImage(settings.SourceImage, networkDomain.DatacenterID, client)
-	if err != nil {
-		return nil, err
-	}
-	if image == nil {
-		return nil, fmt.Errorf("Cannot find source image named '%s' in datacenter '%s'",
-			settings.SourceImage,
-			networkDomain.DatacenterID,
-		)
+	rawError, ok := stepState.GetOk("error")
+	if ok {
+		return nil, rawError.(error)
 	}
 
-	ui.Message(fmt.Sprintf(
-		"Deploying server '%s' in network domain '%s' ('%s')...",
-		settings.ServerName,
-		networkDomain.Name,
-		networkDomain.ID,
-	))
-
-	server, err := deployServer(*settings, image, *networkDomain, client)
-	if err != nil {
-		return nil, err
+	rawImageArtifact, ok := stepState.GetOk("target_image_artifact")
+	if !ok {
+		return nil, fmt.Errorf("One or more steps failed to complete")
 	}
 
-	ui.Message(fmt.Sprintf(
-		"Deployed server '%s' ('%s').",
-		server.Name,
-		server.ID,
-	))
-
-	ui.Message(fmt.Sprintf(
-		"Creating image '%s' from server '%s' ('%s')...",
-		settings.TargetImage,
-		server.Name,
-		server.ID,
-	))
-
-	customerImage, err := cloneServer(*settings, *server, *networkDomain, client)
-	if err != nil {
-		return nil, err
-	}
-
-	ui.Message(fmt.Sprintf(
-		"Created customer image '%s' ('%s') from server '%s' ('%s').",
-		customerImage.Name,
-		customerImage.ID,
-		server.Name,
-		server.ID,
-	))
-
-	ui.Message(fmt.Sprintf(
-		"Destroying server '%s' ('%s')...",
-		server.Name,
-		server.ID,
-	))
-
-	err = destroyServer(server.ID, client)
-	if err != nil {
-		return nil, err
-	}
-
-	imageArtifact := &ImageArtifact{
-		Server:        *server,
-		NetworkDomain: *networkDomain,
-		Image:         *customerImage,
-
-		// TODO: deleteImage.
-	}
+	imageArtifact := rawImageArtifact.(*artifacts.Image)
 
 	return imageArtifact, nil
 }
