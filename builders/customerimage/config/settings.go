@@ -81,5 +81,28 @@ func (settings *Settings) Validate() (err error) {
 		)
 	}
 
+	// Communicator defaults.
+	if settings.CommunicatorConfig.Type == "" {
+		settings.CommunicatorConfig.Type = "none"
+	}
+	if settings.CommunicatorConfig.SSHHost == "" {
+		settings.CommunicatorConfig.SSHHost = settings.ServerName
+	}
+	if settings.CommunicatorConfig.SSHUsername == "" {
+		settings.CommunicatorConfig.SSHUsername = "root"
+	}
+	if settings.CommunicatorConfig.SSHPassword == "" {
+		settings.CommunicatorConfig.SSHPassword = settings.UniquenessKey
+	}
+	if settings.CommunicatorConfig.WinRMHost == "" {
+		settings.CommunicatorConfig.WinRMHost = settings.ServerName
+	}
+	if settings.CommunicatorConfig.WinRMUser == "" {
+		settings.CommunicatorConfig.WinRMUser = "Administrator"
+	}
+	if settings.CommunicatorConfig.WinRMPassword == "" {
+		settings.CommunicatorConfig.WinRMHost = settings.UniquenessKey
+	}
+
 	return
 }

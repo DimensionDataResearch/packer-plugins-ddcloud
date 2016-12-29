@@ -46,16 +46,12 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 		return
 	}
 
-	err = builder.settings.Validate()
-	if err != nil {
-		return
-	}
-
 	builder.settings.UniquenessKey = createUniquenessKey()
 	builder.settings.ServerName = fmt.Sprintf("packer-build-%s", builder.settings.UniquenessKey)
 
-	if builder.settings.CommunicatorConfig.Type == "" {
-		builder.settings.CommunicatorConfig.Type = "none"
+	err = builder.settings.Validate()
+	if err != nil {
+		return
 	}
 
 	builder.client = compute.NewClient(
