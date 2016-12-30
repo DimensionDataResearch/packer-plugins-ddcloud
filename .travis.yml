@@ -11,4 +11,4 @@ install:
   - go get github.com/mitchellh/packer
   - cd $GOPATH/src/github.com/mitchellh/packer
   - git checkout v0.8.6
-  - go get -v -d ./...
+  - go get -v -d ./... || true
