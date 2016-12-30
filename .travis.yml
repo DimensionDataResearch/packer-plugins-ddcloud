@@ -16,3 +16,5 @@ install:
   - cd $GOPATH/src/github.com/mitchellh/packer
   - git checkout v0.8.6
   - go get -v -d ./... || true
+  - cd $GOPATH/src/github.com/DimensionDataResearch/packer-plugins-ddcloud
+  
