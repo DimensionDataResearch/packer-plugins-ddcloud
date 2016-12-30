@@ -16,15 +16,10 @@ We're also planning to create a plugin that uploads an OVF and imports it to cre
 There are no pre-built binaries yet, so you'll have to build it yourself for now.
 Needs Packer <= 0.8.6, OSX or Linux, Go >= 1.7, and GNU Make.
 
-```bash
-go get -u github.com/DimensionDataResearch/packer-plugins-ddcloud
-go get -v -d github.com/mitchellh/packer
-cd $GOPATH/src/github.com/mitchellh/packer
-git checkout v0.8.6
-go get -v -d ./...
-cd $GOPATH/src/github.com/DimensionDataResearch/packer-plugins-ddcloud
-make dev
-```
+Sorry, the dependencies are a bit messy at the moment.
+
+1. Fetch correct dependency versions by running `./init.sh` (one-time only).
+2. Run `make dev`.
 
 ## Example configuration
 
