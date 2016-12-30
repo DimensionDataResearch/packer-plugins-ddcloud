@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
 	"github.com/mitchellh/packer/packer"
 )
 
@@ -13,12 +12,13 @@ type Image struct {
 	Server        compute.Server
 	NetworkDomain compute.NetworkDomain
 	Image         compute.CustomerImage
+	BuilderID     string
 	deleteImage   func() error
 }
 
 // BuilderId returns the ID of the builder that was used to create the artifact.
 func (artifact *Image) BuilderId() string {
-	return config.BuilderID
+	return artifact.BuilderID
 }
 
 // Files determines the set of files that comprise the artifact.

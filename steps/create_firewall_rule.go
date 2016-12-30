@@ -5,8 +5,8 @@ import (
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
-	"github.com/mitchellh/packer/packer"
 )
 
 // CreateFirewallRule is the step that exposes the target server using a firewall rule.
@@ -17,13 +17,15 @@ type CreateFirewallRule struct{}
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step *CreateFirewallRule) Run(state multistep.StateBag) multistep.StepAction {
-	ui := state.Get("ui").(packer.Ui)
+func (step *CreateFirewallRule) Run(stateBag multistep.StateBag) multistep.StepAction {
+	state := helpers.ForStateBag(stateBag)
+	ui := state.GetUI()
 
-	settings := state.Get("settings").(*config.Settings)
-	client := state.Get("client").(*compute.Client)
-	networkDomain := state.Get("network_domain").(*compute.NetworkDomain)
-	server := state.Get("server").(*compute.Server)
+	settings := state.GetConfig().(*config.Settings)
+	client := state.GetClient()
+	networkDomain := state.GetNetworkDomain()
+	server := state.GetServer()
+	natRule := state.GetNATRule()
 
 	if settings.UsePrivateIPv4 {
 		ui.Message(fmt.Sprintf(
@@ -42,8 +44,6 @@ func (step *CreateFirewallRule) Run(state multistep.StateBag) multistep.StepActi
 
 		return multistep.ActionContinue
 	}
-
-	natRule := state.Get("nat_rule").(*compute.NATRule)
 
 	ui.Message(fmt.Sprintf(
 		"Creating firewall rule to permit access for server '%s' ('%s') via public IPv4 address '%s'...",
@@ -87,7 +87,7 @@ func (step *CreateFirewallRule) Run(state multistep.StateBag) multistep.StepActi
 		return multistep.ActionHalt
 	}
 
-	state.Put("firewall_rule", firewallRule)
+	state.SetFirewallRule(firewallRule)
 
 	return multistep.ActionContinue
 }
@@ -99,17 +99,14 @@ func (step *CreateFirewallRule) Run(state multistep.StateBag) multistep.StepActi
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step *CreateFirewallRule) Cleanup(state multistep.StateBag) {
-	ui := state.Get("ui").(packer.Ui)
+func (step *CreateFirewallRule) Cleanup(stateBag multistep.StateBag) {
+	state := helpers.ForStateBag(stateBag)
+	ui := state.GetUI()
 
-	client := state.Get("client").(*compute.Client)
-	server := state.Get("server").(*compute.Server)
+	client := state.GetClient()
+	server := state.GetServer()
 
-	value, _ := state.GetOk("firewall_rule")
-	if value == nil {
-		return
-	}
-	firewallRule := value.(*compute.FirewallRule)
+	firewallRule := state.GetFirewallRule()
 
 	ui.Message(fmt.Sprintf(
 		"Destroying firewall rule '%s' ('%s') for server '%s' ('%s')...",
@@ -126,7 +123,7 @@ func (step *CreateFirewallRule) Cleanup(state multistep.StateBag) {
 		return
 	}
 
-	state.Put("firewall_rule", nil)
+	state.SetFirewallRule(nil)
 
 	ui.Message(fmt.Sprintf(
 		"Destroyed firewall rule '%s' ('%s') for server '%s' ('%s').",

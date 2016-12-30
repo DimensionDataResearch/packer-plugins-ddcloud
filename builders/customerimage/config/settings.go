@@ -6,6 +6,7 @@ import (
 
 	"time"
 
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/helper/communicator"
 	"github.com/mitchellh/packer/packer"
@@ -29,6 +30,18 @@ type Settings struct {
 	ClientIP             string `mapstructure:"client_ip"`
 	UniquenessKey        string
 	ServerName           string
+}
+
+var _ helpers.PluginConfig = &Settings{}
+
+// GetPackerConfig retrieves the common Packer configuration for the plugin.
+func (settings *Settings) GetPackerConfig() *common.PackerConfig {
+	return &settings.PackerConfig
+}
+
+// GetCommunicatorConfig retrieves the Packer communicator configuration for the plugin.
+func (settings *Settings) GetCommunicatorConfig() *communicator.Config {
+	return &settings.CommunicatorConfig
 }
 
 // Validate determines if the settings is valid.

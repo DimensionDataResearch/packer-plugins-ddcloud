@@ -3,47 +3,40 @@ package steps
 import (
 	"fmt"
 
-	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
-	"github.com/mitchellh/packer/packer"
 )
 
-// ResolveVLAN is the step that resolves the target VLAN by name from CloudControl.
-type ResolveVLAN struct{}
+// CheckTargetImage is the step that ensures the target image does not already exist in CloudControl.
+type CheckTargetImage struct{}
 
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step *ResolveVLAN) Run(state multistep.StateBag) multistep.StepAction {
-	ui := state.Get("ui").(packer.Ui)
+func (step *CheckTargetImage) Run(stateBag multistep.StateBag) multistep.StepAction {
+	state := helpers.ForStateBag(stateBag)
+	ui := state.GetUI()
 
-	settings := state.Get("settings").(*config.Settings)
-	client := state.Get("client").(*compute.Client)
-	networkDomain := state.Get("network_domain").(*compute.NetworkDomain)
+	settings := state.GetConfig().(*config.Settings)
+	client := state.GetClient()
 
-	vlan, err := client.GetVLANByName(
-		settings.VLANName,
-		networkDomain.ID,
-	)
+	targetImage, err := client.FindCustomerImage(settings.TargetImage, settings.DatacenterID)
 	if err != nil {
 		ui.Error(err.Error())
 
 		return multistep.ActionHalt
 	}
-	if vlan == nil {
+
+	if targetImage != nil {
 		ui.Error(fmt.Sprintf(
-			"Unable to find VLAN '%s' in network domain '%s' ('%s') in datacenter '%s'.",
-			settings.VLANName,
-			networkDomain.Name,
-			networkDomain.ID,
+			"Target image '%s' already exists in datacenter '%s'.",
+			settings.TargetImage,
 			settings.DatacenterID,
 		))
 
 		return multistep.ActionHalt
 	}
-
-	state.Put("vlan", vlan)
 
 	return multistep.ActionContinue
 }
@@ -55,7 +48,7 @@ func (step *ResolveVLAN) Run(state multistep.StateBag) multistep.StepAction {
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step *ResolveVLAN) Cleanup(state multistep.StateBag) {
+func (step *CheckTargetImage) Cleanup(state multistep.StateBag) {
 }
 
-var _ multistep.Step = &ResolveVLAN{}
+var _ multistep.Step = &CheckTargetImage{}

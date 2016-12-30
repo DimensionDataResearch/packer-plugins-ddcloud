@@ -8,9 +8,9 @@ import (
 	"encoding/hex"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/artifacts"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/artifacts"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/steps"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/steps"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/helper/communicator"

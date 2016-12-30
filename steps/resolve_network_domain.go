@@ -3,40 +3,44 @@ package steps
 import (
 	"fmt"
 
-	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
-	"github.com/mitchellh/packer/packer"
 )
 
-// CheckTargetImage is the step that ensures the target image does not already exist in CloudControl.
-type CheckTargetImage struct{}
+// ResolveNetworkDomain is the step that resolves the target network domain by name from CloudControl.
+type ResolveNetworkDomain struct{}
 
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step *CheckTargetImage) Run(state multistep.StateBag) multistep.StepAction {
-	ui := state.Get("ui").(packer.Ui)
+func (step *ResolveNetworkDomain) Run(stateBag multistep.StateBag) multistep.StepAction {
+	state := helpers.ForStateBag(stateBag)
+	ui := state.GetUI()
 
-	settings := state.Get("settings").(*config.Settings)
-	client := state.Get("client").(*compute.Client)
+	settings := state.GetConfig().(*config.Settings)
+	client := state.GetClient()
 
-	targetImage, err := client.FindCustomerImage(settings.TargetImage, settings.DatacenterID)
+	networkDomain, err := client.GetNetworkDomainByName(
+		settings.NetworkDomainName,
+		settings.DatacenterID,
+	)
 	if err != nil {
 		ui.Error(err.Error())
 
 		return multistep.ActionHalt
 	}
-
-	if targetImage != nil {
+	if networkDomain == nil {
 		ui.Error(fmt.Sprintf(
-			"Target image '%s' already exists in datacenter '%s'.",
-			settings.TargetImage,
+			"Unable to find network domain '%s' in datacenter '%s'.",
+			settings.NetworkDomainName,
 			settings.DatacenterID,
 		))
 
 		return multistep.ActionHalt
 	}
+
+	state.SetNetworkDomain(networkDomain)
 
 	return multistep.ActionContinue
 }
@@ -48,7 +52,7 @@ func (step *CheckTargetImage) Run(state multistep.StateBag) multistep.StepAction
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step *CheckTargetImage) Cleanup(state multistep.StateBag) {
+func (step *ResolveNetworkDomain) Cleanup(state multistep.StateBag) {
 }
 
-var _ multistep.Step = &CheckTargetImage{}
+var _ multistep.Step = &ResolveNetworkDomain{}

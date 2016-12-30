@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/artifacts"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/artifacts"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
-	"github.com/mitchellh/packer/packer"
 )
 
 // CloneServer is the step that clones the target server in CloudControl.
@@ -17,13 +17,14 @@ type CloneServer struct{}
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step *CloneServer) Run(state multistep.StateBag) multistep.StepAction {
-	ui := state.Get("ui").(packer.Ui)
+func (step *CloneServer) Run(stateBag multistep.StateBag) multistep.StepAction {
+	state := helpers.ForStateBag(stateBag)
+	ui := state.GetUI()
 
-	settings := state.Get("settings").(*config.Settings)
-	client := state.Get("client").(*compute.Client)
-	networkDomain := state.Get("network_domain").(*compute.NetworkDomain)
-	server := state.Get("server").(*compute.Server)
+	settings := state.GetConfig().(*config.Settings)
+	client := state.GetClient()
+	networkDomain := state.GetNetworkDomain()
+	server := state.GetServer()
 
 	ui.Message(fmt.Sprintf(
 		"Shutting down server '%s' ('%s')...",
@@ -51,7 +52,7 @@ func (step *CloneServer) Run(state multistep.StateBag) multistep.StepAction {
 	}
 
 	server = resource.(*compute.Server)
-	state.Put("server", server)
+	state.SetServer(server)
 
 	ui.Message(fmt.Sprintf(
 		"Server '%s' ('%s') has been shut down.",
@@ -88,7 +89,7 @@ func (step *CloneServer) Run(state multistep.StateBag) multistep.StepAction {
 	}
 
 	customerImage := resource.(*compute.CustomerImage)
-	state.Put("target_image", customerImage)
+	state.SetTargetImage(customerImage)
 
 	ui.Message(fmt.Sprintf(
 		"Cloned server '%s' ('%s') to customer image '%s' ('%s') in datacenter '%s'.",
@@ -104,7 +105,7 @@ func (step *CloneServer) Run(state multistep.StateBag) multistep.StepAction {
 		NetworkDomain: *networkDomain,
 		Image:         *customerImage,
 	}
-	state.Put("target_image_artifact", imageArtifact)
+	state.SetTargetImageArtifact(imageArtifact)
 
 	return multistep.ActionContinue
 }

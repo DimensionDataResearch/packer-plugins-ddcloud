@@ -5,8 +5,8 @@ import (
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
-	"github.com/mitchellh/packer/packer"
 )
 
 // CreateNATRule is the step that exposes the target server using a NAT rule.
@@ -15,13 +15,15 @@ type CreateNATRule struct{}
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step *CreateNATRule) Run(state multistep.StateBag) multistep.StepAction {
-	ui := state.Get("ui").(packer.Ui)
+func (step *CreateNATRule) Run(stateBag multistep.StateBag) multistep.StepAction {
+	state := helpers.ForStateBag(stateBag)
 
-	settings := state.Get("settings").(*config.Settings)
-	client := state.Get("client").(*compute.Client)
-	networkDomain := state.Get("network_domain").(*compute.NetworkDomain)
-	server := state.Get("server").(*compute.Server)
+	ui := state.GetUI()
+
+	settings := state.GetConfig().(*config.Settings)
+	client := state.GetClient()
+	networkDomain := state.GetNetworkDomain()
+	server := state.GetServer()
 
 	if settings.UsePrivateIPv4 {
 		ui.Message(fmt.Sprintf(
@@ -120,7 +122,7 @@ func (step *CreateNATRule) Run(state multistep.StateBag) multistep.StepAction {
 		natRule.ExternalIPAddress,
 	))
 
-	state.Put("nat_rule", natRule)
+	state.SetNATRule(natRule)
 
 	// Override SSH / WinRM connection details, if required.
 	communicatorConfig := &settings.CommunicatorConfig
@@ -141,17 +143,17 @@ func (step *CreateNATRule) Run(state multistep.StateBag) multistep.StepAction {
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step *CreateNATRule) Cleanup(state multistep.StateBag) {
-	ui := state.Get("ui").(packer.Ui)
+func (step *CreateNATRule) Cleanup(stateBag multistep.StateBag) {
+	state := helpers.ForStateBag(stateBag)
+	ui := state.GetUI()
 
-	client := state.Get("client").(*compute.Client)
-	server := state.Get("server").(*compute.Server)
+	client := state.GetClient()
+	server := state.GetServer()
 
-	value, _ := state.GetOk("nat_rule")
-	if value == nil {
-		return
+	natRule := state.GetNATRule()
+	if natRule == nil {
+		return // Nothing to do.
 	}
-	natRule := value.(*compute.NATRule)
 
 	ui.Message(fmt.Sprintf(
 		"Destroying NAT rule '%s' ('%s' -> '%s') for server '%s' ('%s')...",
@@ -169,7 +171,7 @@ func (step *CreateNATRule) Cleanup(state multistep.StateBag) {
 		return
 	}
 
-	state.Put("nat_rule", nil)
+	state.SetNATRule(nil)
 
 	ui.Message(fmt.Sprintf(
 		"Destroyed NAT rule '%s' ('%s' -> '%s') for server '%s' ('%s').",

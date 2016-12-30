@@ -6,6 +6,7 @@ import (
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
 )
@@ -16,14 +17,15 @@ type DeployServer struct{}
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step *DeployServer) Run(state multistep.StateBag) multistep.StepAction {
-	ui := state.Get("ui").(packer.Ui)
+func (step *DeployServer) Run(stateBag multistep.StateBag) multistep.StepAction {
+	state := helpers.ForStateBag(stateBag)
+	ui := state.GetUI()
 
-	settings := state.Get("settings").(*config.Settings)
-	client := state.Get("client").(*compute.Client)
-	networkDomain := state.Get("network_domain").(*compute.NetworkDomain)
-	vlan := state.Get("vlan").(*compute.VLAN)
-	image := state.Get("source_image").(compute.Image)
+	settings := state.GetConfig().(*config.Settings)
+	client := state.GetClient()
+	networkDomain := state.GetNetworkDomain()
+	vlan := state.GetVLAN()
+	image := state.GetSourceImage()
 
 	ui.Message(fmt.Sprintf(
 		"Deploying server '%s' in network domain '%s' ('%s')...",
@@ -61,7 +63,7 @@ func (step *DeployServer) Run(state multistep.StateBag) multistep.StepAction {
 	}
 
 	server := resource.(*compute.Server)
-	state.Put("server", server)
+	state.SetServer(server)
 
 	serverIPv4 := *server.Network.PrimaryAdapter.PrivateIPv4Address
 	ui.Message(fmt.Sprintf(
