@@ -11,6 +11,7 @@ VENDOR_ROOT   = $(REPO_ROOT)/vendor
 BIN_DIRECTORY = _bin
 EXECUTABLE_PREFIX_SUFFIX = ddcloud
 EXECUTABLE_PREFIX_BUILDER = packer-builder-$(EXECUTABLE_PREFIX_SUFFIX)
+DIST_ZIP_PREFIX = packer-plugins-ddcloud-v$(VERSION)
 
 ################
 # Public targets
