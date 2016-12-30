@@ -75,10 +75,11 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 			&steps.CreateNATRule{},
 			&steps.CreateFirewallRule{},
 			&communicator.StepConnect{
-				Config:    &builder.settings.CommunicatorConfig,
-				Host:      getSSHHost,
-				SSHPort:   getSSHPort,
-				SSHConfig: getSSHConfig,
+				Config:      &builder.settings.CommunicatorConfig,
+				Host:        getSSHHost,
+				SSHPort:     getSSHPort,
+				SSHConfig:   getSSHConfig,
+				WinRMConfig: getWinRMConfig,
 			},
 			&common.StepProvision{},
 			&steps.CloneServer{},
@@ -152,6 +153,16 @@ func getSSHConfig(state multistep.StateBag) (clientConfig *gossh.ClientConfig, e
 		Auth: []gossh.AuthMethod{
 			gossh.Password(settings.CommunicatorConfig.SSHPassword),
 		},
+	}
+
+	return
+}
+
+func getWinRMConfig(state multistep.StateBag) (winRMConfig *communicator.WinRMConfig, err error) {
+	settings := state.Get("settings").(*config.Settings)
+	winRMConfig = &communicator.WinRMConfig{
+		Username: settings.CommunicatorConfig.WinRMUser,
+		Password: settings.CommunicatorConfig.WinRMPassword,
 	}
 
 	return
