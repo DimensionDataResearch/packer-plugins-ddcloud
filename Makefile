@@ -84,16 +84,16 @@ testall:
 -build: -build-windows64 -build-windows32 -build-linux64 -build-mac64
 
 -build-windows64: version
-	GOOS=windows GOARCH=amd64 go build -o $(BIN_DIRECTORY)/windows-amd64/$(EXECUTABLE_NAME).exe
+	GOOS=windows GOARCH=amd64 go build -o $(BIN_DIRECTORY)/windows-amd64/$(EXECUTABLE_NAME).exe $(PLUGIN_FOLDER)
 
 -build-windows32: version
-	GOOS=windows GOARCH=386 go build -o $(BIN_DIRECTORY)/windows-386/$(EXECUTABLE_NAME).exe
+	GOOS=windows GOARCH=386 go build -o $(BIN_DIRECTORY)/windows-386/$(EXECUTABLE_NAME).exe $(PLUGIN_FOLDER)
 
 -build-linux64: version
-	GOOS=linux GOARCH=amd64 go build -o $(BIN_DIRECTORY)/linux-amd64/$(EXECUTABLE_NAME)
+	GOOS=linux GOARCH=amd64 go build -o $(BIN_DIRECTORY)/linux-amd64/$(EXECUTABLE_NAME) $(PLUGIN_FOLDER)
 
 -build-mac64: version
-	GOOS=darwin GOARCH=amd64 go build -o $(BIN_DIRECTORY)/darwin-amd64/$(EXECUTABLE_NAME)
+	GOOS=darwin GOARCH=amd64 go build -o $(BIN_DIRECTORY)/darwin-amd64/$(EXECUTABLE_NAME) $(PLUGIN_FOLDER)
 
 -dist-builder: PLUGIN_FOLDER = $(BUILDERS_ROOT)/$(PLUGIN_NAME)
 -dist-builder: EXECUTABLE_NAME = $(EXECUTABLE_PREFIX_BUILDER)-$(PLUGIN_NAME)
