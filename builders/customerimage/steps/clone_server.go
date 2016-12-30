@@ -26,6 +26,40 @@ func (step *CloneServer) Run(state multistep.StateBag) multistep.StepAction {
 	server := state.Get("server").(*compute.Server)
 
 	ui.Message(fmt.Sprintf(
+		"Shutting down server '%s' ('%s')...",
+		server.Name,
+		server.ID,
+	))
+
+	err := client.ShutdownServer(server.ID)
+	if err != nil {
+		ui.Error(err.Error())
+
+		return multistep.ActionHalt
+	}
+
+	resource, err := client.WaitForChange(
+		compute.ResourceTypeServer,
+		server.ID,
+		"Shut down",
+		5*time.Minute,
+	)
+	if err != nil {
+		ui.Error(err.Error())
+
+		return multistep.ActionHalt
+	}
+
+	server = resource.(*compute.Server)
+	state.Put("server", server)
+
+	ui.Message(fmt.Sprintf(
+		"Server '%s' ('%s') has been shut down.",
+		server.Name,
+		server.ID,
+	))
+
+	ui.Message(fmt.Sprintf(
 		"Cloning server '%s' ('%s')...",
 		server.Name,
 		server.ID,
@@ -43,7 +77,6 @@ func (step *CloneServer) Run(state multistep.StateBag) multistep.StepAction {
 		return multistep.ActionHalt
 	}
 
-	var resource compute.Resource
 	resource, err = client.WaitForServerClone(
 		imageID,
 		15*time.Minute,

@@ -4,6 +4,8 @@ go:
     - 1.7.1
 
 install:
-  - go get github.com/mitchellh/packer
-  - go get github.com/mitchellh/multistep
+  - go get -v -d github.com/mitchellh/packer
+  - cd $GOPATH/src/github.com/mitchellh/packer
+  - git checkout v0.8.6
+  - go get -v -d ./...
 

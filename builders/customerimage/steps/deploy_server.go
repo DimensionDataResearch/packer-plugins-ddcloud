@@ -42,7 +42,7 @@ func (step *DeployServer) Run(state multistep.StateBag) multistep.StepAction {
 				VLANID: &vlan.ID,
 			},
 		},
-		Start: false,
+		Start: true, // TODO: Is it possible to auto-start the server only when one or more provisioners are configured?
 	}
 	image.ApplyTo(&deploymentConfiguration)
 
@@ -63,6 +63,15 @@ func (step *DeployServer) Run(state multistep.StateBag) multistep.StepAction {
 	server := resource.(*compute.Server)
 	state.Put("server", server)
 
+	serverIPv4 := *server.Network.PrimaryAdapter.PrivateIPv4Address
+	ui.Message(fmt.Sprintf(
+		"Server '%s' has IPv4 address '%s'.",
+		server.Name,
+		serverIPv4,
+	))
+	settings.CommunicatorConfig.SSHHost = serverIPv4
+	settings.CommunicatorConfig.WinRMHost = serverIPv4
+
 	ui.Message(fmt.Sprintf(
 		"Deployed server '%s' ('%s') in network domain '%s' ('%s')...",
 		server.Name,
@@ -81,8 +90,6 @@ func (step *DeployServer) Run(state multistep.StateBag) multistep.StepAction {
 //
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
-func (step *DeployServer) Cleanup(state multistep.StateBag) {
-	// TODO: Destroy server.
-}
+func (step *DeployServer) Cleanup(state multistep.StateBag) {}
 
 var _ multistep.Step = &DeployServer{}

@@ -18,6 +18,7 @@ import (
 	"github.com/mitchellh/packer/template/interpolate"
 
 	confighelper "github.com/mitchellh/packer/helper/config"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 // Builder is the Builder plugin for Packer.
@@ -70,8 +71,27 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 			&steps.ResolveVLAN{},
 			&steps.ResolveSourceImage{},
 			&steps.DeployServer{},
+			&steps.CreateNATRule{},
+			&steps.CreateFirewallRule{},
 			&communicator.StepConnect{
 				Config: &builder.settings.CommunicatorConfig,
+				Host: func(state multistep.StateBag) (host string, err error) {
+					settings := state.Get("settings").(*config.Settings)
+					host = settings.CommunicatorConfig.SSHHost
+
+					return
+				},
+				SSHConfig: func(state multistep.StateBag) (clientConfig *gossh.ClientConfig, err error) {
+					settings := state.Get("settings").(*config.Settings)
+					clientConfig = &gossh.ClientConfig{
+						User: settings.CommunicatorConfig.SSHUsername,
+						Auth: []gossh.AuthMethod{
+							gossh.Password(settings.CommunicatorConfig.SSHPassword),
+						},
+					}
+
+					return
+				},
 			},
 			&common.StepProvision{},
 			&steps.CloneServer{},

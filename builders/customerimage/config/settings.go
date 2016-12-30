@@ -23,6 +23,8 @@ type Settings struct {
 	SourceImage          string `mapstructure:"source_image"`
 	TargetImage          string `mapstructure:"target_image"`
 	InitialAdminPassword string `mapstructure:"initial_admin_password"`
+	UsePrivateIPv4       bool   `mapstructure:"use_private_ipv4"`
+	ClientIP             string `mapstructure:"client_ip"`
 	UniquenessKey        string
 	ServerName           string
 }
@@ -89,6 +91,12 @@ func (settings *Settings) Validate() (err error) {
 	// Communicator defaults.
 	if settings.CommunicatorConfig.Type == "" {
 		settings.CommunicatorConfig.Type = "none"
+	} else if !settings.UsePrivateIPv4 {
+		if settings.ClientIP == "" {
+			err = packer.MultiErrorAppend(err,
+				fmt.Errorf("'use_private_ipv4' has been specified in settings, but 'client_ip' has not"),
+			)
+		}
 	}
 	if settings.CommunicatorConfig.SSHHost == "" {
 		settings.CommunicatorConfig.SSHHost = settings.ServerName
