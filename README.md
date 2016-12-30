@@ -33,7 +33,17 @@ Sorry, the dependencies are a bit messy at the moment.
 			"networkdomain": "MyNetworkDomain",
 			"vlan": "MyVLAN",
             "source_image": "Ubuntu 14.04 2 CPU",
-			"target_image": "packertest"
+			"target_image": "packertest",
+			"client_ip": "1.2.3.4",
+			"communicator": "ssh"
+		}
+	],
+	"provisioners": [
+		{
+			"type": "shell",
+			"inline": [
+				"ls -l /"
+			]
 		}
 	]
 }
@@ -44,5 +54,6 @@ Sorry, the dependencies are a bit messy at the moment.
 * `vlan` is the name of the VLAN to which the server will be attached.
 * `source_image` is the name of the image used to create the server.
 * `target_image` is the name of the customer image to create.
+* `client_ip` is your client machine's public (external) IP address.
 
 Specify CloudControl username and password using `MCP_USER` and `MCP_PASSWORD` environment variables.
