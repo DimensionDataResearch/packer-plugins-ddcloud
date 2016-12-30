@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"time"
+
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/helper/communicator"
 	"github.com/mitchellh/packer/packer"
@@ -89,6 +91,8 @@ func (settings *Settings) Validate() (err error) {
 	}
 
 	// Communicator defaults.
+	settings.CommunicatorConfig.SSHTimeout = 2 * time.Minute
+	settings.CommunicatorConfig.WinRMTimeout = 2 * time.Minute
 	if settings.CommunicatorConfig.Type == "" {
 		settings.CommunicatorConfig.Type = "none"
 	} else if !settings.UsePrivateIPv4 {
@@ -101,6 +105,9 @@ func (settings *Settings) Validate() (err error) {
 	if settings.CommunicatorConfig.SSHHost == "" {
 		settings.CommunicatorConfig.SSHHost = settings.ServerName
 	}
+	if settings.CommunicatorConfig.SSHPort == 0 {
+		settings.CommunicatorConfig.SSHPort = 22
+	}
 	if settings.CommunicatorConfig.SSHUsername == "" {
 		settings.CommunicatorConfig.SSHUsername = "root"
 	}
@@ -109,6 +116,9 @@ func (settings *Settings) Validate() (err error) {
 	}
 	if settings.CommunicatorConfig.WinRMHost == "" {
 		settings.CommunicatorConfig.WinRMHost = settings.ServerName
+	}
+	if settings.CommunicatorConfig.WinRMPort == 0 {
+		settings.CommunicatorConfig.WinRMPort = 5895
 	}
 	if settings.CommunicatorConfig.WinRMUser == "" {
 		settings.CommunicatorConfig.WinRMUser = "Administrator"

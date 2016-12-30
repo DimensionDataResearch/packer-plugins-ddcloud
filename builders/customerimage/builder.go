@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"crypto/rand"
 	"encoding/hex"
-	"math/rand"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/artifacts"
@@ -78,6 +78,12 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 				Host: func(state multistep.StateBag) (host string, err error) {
 					settings := state.Get("settings").(*config.Settings)
 					host = settings.CommunicatorConfig.SSHHost
+
+					return
+				},
+				SSHPort: func(state multistep.StateBag) (port int, err error) {
+					settings := state.Get("settings").(*config.Settings)
+					port = settings.CommunicatorConfig.SSHPort
 
 					return
 				},
