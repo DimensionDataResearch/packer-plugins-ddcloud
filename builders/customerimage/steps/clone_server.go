@@ -117,7 +117,6 @@ func (step *CloneServer) Run(state multistep.StateBag) multistep.StepAction {
 // The parameter is the same "state bag" as Run, and represents the
 // state at the latest possible time prior to calling Cleanup.
 func (step *CloneServer) Cleanup(state multistep.StateBag) {
-	// TODO: Clone server.
 }
 
 var _ multistep.Step = &CloneServer{}

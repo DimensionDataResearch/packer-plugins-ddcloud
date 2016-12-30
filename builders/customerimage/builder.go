@@ -70,7 +70,7 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 			&steps.ResolveNetworkDomain{},
 			&steps.ResolveVLAN{},
 			&steps.ResolveSourceImage{},
-			// TODO: Ensure target image doesn't already exist.
+			&steps.CheckTargetImage{},
 			&steps.DeployServer{},
 			&steps.CreateNATRule{},
 			&steps.CreateFirewallRule{},
