@@ -74,30 +74,10 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 			&steps.CreateNATRule{},
 			&steps.CreateFirewallRule{},
 			&communicator.StepConnect{
-				Config: &builder.settings.CommunicatorConfig,
-				Host: func(state multistep.StateBag) (host string, err error) {
-					settings := state.Get("settings").(*config.Settings)
-					host = settings.CommunicatorConfig.SSHHost
-
-					return
-				},
-				SSHPort: func(state multistep.StateBag) (port int, err error) {
-					settings := state.Get("settings").(*config.Settings)
-					port = settings.CommunicatorConfig.SSHPort
-
-					return
-				},
-				SSHConfig: func(state multistep.StateBag) (clientConfig *gossh.ClientConfig, err error) {
-					settings := state.Get("settings").(*config.Settings)
-					clientConfig = &gossh.ClientConfig{
-						User: settings.CommunicatorConfig.SSHUsername,
-						Auth: []gossh.AuthMethod{
-							gossh.Password(settings.CommunicatorConfig.SSHPassword),
-						},
-					}
-
-					return
-				},
+				Config:    &builder.settings.CommunicatorConfig,
+				Host:      getSSHHost,
+				SSHPort:   getSSHPort,
+				SSHConfig: getSSHConfig,
 			},
 			&common.StepProvision{},
 			&steps.CloneServer{},
@@ -149,4 +129,30 @@ func createUniquenessKey() string {
 	rand.Read(uniquenessKeyBytes)
 
 	return hex.EncodeToString(uniquenessKeyBytes)
+}
+
+func getSSHHost(state multistep.StateBag) (host string, err error) {
+	settings := state.Get("settings").(*config.Settings)
+	host = settings.CommunicatorConfig.SSHHost
+
+	return
+}
+
+func getSSHPort(state multistep.StateBag) (port int, err error) {
+	settings := state.Get("settings").(*config.Settings)
+	port = settings.CommunicatorConfig.SSHPort
+
+	return
+}
+
+func getSSHConfig(state multistep.StateBag) (clientConfig *gossh.ClientConfig, err error) {
+	settings := state.Get("settings").(*config.Settings)
+	clientConfig = &gossh.ClientConfig{
+		User: settings.CommunicatorConfig.SSHUsername,
+		Auth: []gossh.AuthMethod{
+			gossh.Password(settings.CommunicatorConfig.SSHPassword),
+		},
+	}
+
+	return
 }
