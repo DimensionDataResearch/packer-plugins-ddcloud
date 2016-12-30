@@ -18,7 +18,7 @@ func (step *CheckTargetImage) Run(stateBag multistep.StateBag) multistep.StepAct
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
 
-	settings := state.GetConfig().(*config.Settings)
+	settings := state.GetSettings().(*config.Settings)
 	client := state.GetClient()
 
 	targetImage, err := client.FindCustomerImage(settings.TargetImage, settings.DatacenterID)

@@ -18,7 +18,7 @@ func (step *ResolveNetworkDomain) Run(stateBag multistep.StateBag) multistep.Ste
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
 
-	settings := state.GetConfig().(*config.Settings)
+	settings := state.GetSettings().(*config.Settings)
 	client := state.GetClient()
 
 	networkDomain, err := client.GetNetworkDomainByName(

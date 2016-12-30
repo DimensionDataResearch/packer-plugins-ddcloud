@@ -21,7 +21,7 @@ func (step *CreateFirewallRule) Run(stateBag multistep.StateBag) multistep.StepA
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
 
-	settings := state.GetConfig().(*config.Settings)
+	settings := state.GetSettings().(*config.Settings)
 	client := state.GetClient()
 	networkDomain := state.GetNetworkDomain()
 	server := state.GetServer()

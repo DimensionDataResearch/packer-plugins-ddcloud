@@ -21,7 +21,8 @@ func (step *CloneServer) Run(stateBag multistep.StateBag) multistep.StepAction {
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
 
-	settings := state.GetConfig().(*config.Settings)
+	builderID := state.GetBuilderID()
+	settings := state.GetSettings().(*config.Settings)
 	client := state.GetClient()
 	networkDomain := state.GetNetworkDomain()
 	server := state.GetServer()
@@ -104,6 +105,7 @@ func (step *CloneServer) Run(stateBag multistep.StateBag) multistep.StepAction {
 		Server:        *server,
 		NetworkDomain: *networkDomain,
 		Image:         *customerImage,
+		BuilderID:     builderID,
 	}
 	state.SetTargetImageArtifact(imageArtifact)
 

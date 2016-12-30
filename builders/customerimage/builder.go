@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/artifacts"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/steps"
 	"github.com/mitchellh/multistep"
@@ -17,9 +16,13 @@ import (
 	"github.com/mitchellh/packer/packer"
 	"github.com/mitchellh/packer/template/interpolate"
 
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	confighelper "github.com/mitchellh/packer/helper/config"
 	gossh "golang.org/x/crypto/ssh"
 )
+
+// BuilderID is the unique Id for the ddcloud builder
+const BuilderID = "dimension-data-research.ddcloud"
 
 // Builder is the Builder plugin for Packer.
 type Builder struct {
@@ -95,25 +98,26 @@ func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) 
 	packerConfig := &settings.PackerConfig
 	client := builder.client
 
-	stepState := &multistep.BasicStateBag{}
-	stepState.Put("ui", ui)
-	stepState.Put("hook", hook)
-	stepState.Put("config", packerConfig)
-	stepState.Put("settings", settings)
-	stepState.Put("client", client)
-	builder.runner.Run(stepState)
+	stepState := helpers.ForStateBag(
+		&multistep.BasicStateBag{},
+	)
+	stepState.SetUI(ui)
+	stepState.SetHook(hook)
+	stepState.Set("config", packerConfig)
+	stepState.SetSettings(settings)
+	stepState.SetClient(client)
+	stepState.SetBuilderID(BuilderID)
+	builder.runner.Run(stepState.Data)
 
-	rawError, ok := stepState.GetOk("error")
-	if ok {
-		return nil, rawError.(error)
+	err := stepState.GetLastError()
+	if err != nil {
+		return nil, err
 	}
 
-	rawImageArtifact, ok := stepState.GetOk("target_image_artifact")
-	if !ok {
+	imageArtifact := stepState.GetTargetImageArtifact()
+	if imageArtifact == nil {
 		return nil, fmt.Errorf("One or more steps failed to complete")
 	}
-
-	imageArtifact := rawImageArtifact.(*artifacts.Image)
 
 	return imageArtifact, nil
 }

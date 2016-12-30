@@ -18,7 +18,7 @@ func (step *ResolveVLAN) Run(stateBag multistep.StateBag) multistep.StepAction {
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
 
-	settings := state.GetConfig().(*config.Settings)
+	settings := state.GetSettings().(*config.Settings)
 	client := state.GetClient()
 	networkDomain := state.GetNetworkDomain()
 

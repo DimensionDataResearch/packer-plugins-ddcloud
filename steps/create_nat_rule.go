@@ -20,7 +20,7 @@ func (step *CreateNATRule) Run(stateBag multistep.StateBag) multistep.StepAction
 
 	ui := state.GetUI()
 
-	settings := state.GetConfig().(*config.Settings)
+	settings := state.GetSettings().(*config.Settings)
 	client := state.GetClient()
 	networkDomain := state.GetNetworkDomain()
 	server := state.GetServer()

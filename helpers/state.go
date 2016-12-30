@@ -39,6 +39,31 @@ func (state State) Set(key string, value interface{}) {
 	state.Data.Put(key, value)
 }
 
+// GetLastError retrieves last error (if any) from the state data.
+func (state State) GetLastError() error {
+	value, ok := state.Data.GetOk("error")
+	if !ok || value == nil {
+		return nil
+	}
+
+	return value.(error)
+}
+
+// GetBuilderID gets the Id of the current builder plugin (if any) in the state data.
+func (state State) GetBuilderID() string {
+	value, ok := state.Data.GetOk("builder_id")
+	if !ok || value == nil {
+		return ""
+	}
+
+	return value.(string)
+}
+
+// SetBuilderID updates the Id of the current builder plugin (if any) in the state data.
+func (state State) SetBuilderID(builderID string) {
+	state.Data.Put("builder_id", builderID)
+}
+
 // GetUI gets a reference to the Packer UI from the state data.
 func (state State) GetUI() packer.Ui {
 	value, ok := state.Data.GetOk("ui")
@@ -59,7 +84,7 @@ func (state State) SetUI(ui packer.Ui) {
 }
 
 // GetHook gets a reference to the Packer extensibility hook from the state data.
-func (state State) GetHook() *packer.Hook {
+func (state State) GetHook() packer.Hook {
 	value, ok := state.Data.GetOk("hook")
 	if !ok || value == nil {
 		log.Printf("helpers.State.GetHook: Warning - Hook not available.\n%s",
@@ -69,17 +94,17 @@ func (state State) GetHook() *packer.Hook {
 		return nil
 	}
 
-	return value.(*packer.Hook)
+	return value.(packer.Hook)
 }
 
 // SetHook updates the reference to the Packer extensibility hook in the state data.
-func (state State) SetHook(hook *packer.Hook) {
+func (state State) SetHook(hook packer.Hook) {
 	state.Data.Put("hook", hook)
 }
 
-// GetConfig gets the plugin configuration from the state data.
-func (state State) GetConfig() PluginConfig {
-	value, ok := state.Data.GetOk("config")
+// GetSettings gets the plugin settings from the state data.
+func (state State) GetSettings() PluginConfig {
+	value, ok := state.Data.GetOk("settings")
 	if !ok || value == nil {
 		return nil
 	}
@@ -87,9 +112,9 @@ func (state State) GetConfig() PluginConfig {
 	return value.(PluginConfig)
 }
 
-// SetConfig updates the plugin configuration in the state data.
-func (state State) SetConfig(config PluginConfig) {
-	state.Data.Put("config", config)
+// SetSettings updates the plugin settings in the state data.
+func (state State) SetSettings(config PluginConfig) {
+	state.Data.Put("settings", config)
 }
 
 // GetClient gets the CloudControl API client from the state data.
