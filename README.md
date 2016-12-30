@@ -55,11 +55,16 @@ Sorry, the dependencies are a bit messy at the moment.
 }
 ```
 
+The `ddcloud-customerimage` builder plugin supports the following settings:
+
 * `datacenter` is the datacenter Id (must be MCP 2.0).
 * `networkdomain` is the name of the network domain in which to create the server.
 * `vlan` is the name of the VLAN to which the server will be attached.
 * `source_image` is the name of the image used to create the server.
 * `target_image` is the name of the customer image to create.
-* `client_ip` is your client machine's public (external) IP address.
+* `use_private_ipv4` configures the builder to use private IPv4 addresses rather than public ones (via NAT rules).  
+Set this to `true` if you're running packer from inside the MCP 2.0 network domain where the image will be created.
+* `client_ip` is your client machine's public (external) IP address.  
+Required if `use_private_ipv4` is not set.
 
 Specify CloudControl username and password using `MCP_USER` and `MCP_PASSWORD` environment variables.
