@@ -81,7 +81,6 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 			},
 			&common.StepProvision{},
 			&steps.CloneServer{},
-			&steps.DestroyServer{},
 		},
 	}
 
