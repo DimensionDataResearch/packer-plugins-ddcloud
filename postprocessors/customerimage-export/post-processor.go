@@ -6,7 +6,7 @@ import (
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/post-processors/customerimage-export/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/postprocessors/customerimage-export/config"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/steps"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
