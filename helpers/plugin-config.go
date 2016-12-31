@@ -10,7 +10,7 @@ type PluginConfig interface {
 	// GetPackerConfig retrieves the common Packer configuration for the plugin.
 	GetPackerConfig() *common.PackerConfig
 
-	// GetCommunicatorConfig retrieves the Packer communicator configuration for the plugin.
+	// GetCommunicatorConfig retrieves the Packer communicator configuration (if available) for the plugin.
 	GetCommunicatorConfig() *communicator.Config
 
 	// Validate ensures that the configuration is valid.

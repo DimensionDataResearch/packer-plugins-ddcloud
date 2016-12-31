@@ -8,6 +8,7 @@ import (
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/artifacts"
 	"github.com/mitchellh/multistep"
+	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/packer"
 )
 
@@ -39,7 +40,7 @@ func (state State) Set(key string, value interface{}) {
 	state.Data.Put(key, value)
 }
 
-// GetLastError retrieves last error (if any) from the state data.
+// GetLastError retrieves the last error (if any) from the state data.
 func (state State) GetLastError() error {
 	value, ok := state.Data.GetOk("error")
 	if !ok || value == nil {
@@ -47,6 +48,11 @@ func (state State) GetLastError() error {
 	}
 
 	return value.(error)
+}
+
+// SetLastError updates the last error (if any) in the state data.
+func (state State) SetLastError(err error) {
+	state.Data.Put("error", err)
 }
 
 // GetBuilderID gets the Id of the current builder plugin (if any) in the state data.
@@ -100,6 +106,21 @@ func (state State) GetHook() packer.Hook {
 // SetHook updates the reference to the Packer extensibility hook in the state data.
 func (state State) SetHook(hook packer.Hook) {
 	state.Data.Put("hook", hook)
+}
+
+// GetPackerConfig gets the Packer configuration from the state data.
+func (state State) GetPackerConfig() *common.PackerConfig {
+	value, ok := state.Data.GetOk("config")
+	if !ok || value == nil {
+		return nil
+	}
+
+	return value.(*common.PackerConfig)
+}
+
+// SetPackerConfig updates the Packer configuration in the state data.
+func (state State) SetPackerConfig(config *common.PackerConfig) {
+	state.Data.Put("config", config)
 }
 
 // GetSettings gets the plugin settings from the state data.

@@ -9,6 +9,7 @@ import (
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/steps"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common"
@@ -16,7 +17,6 @@ import (
 	"github.com/mitchellh/packer/packer"
 	"github.com/mitchellh/packer/template/interpolate"
 
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	confighelper "github.com/mitchellh/packer/helper/config"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -103,7 +103,7 @@ func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) 
 	)
 	stepState.SetUI(ui)
 	stepState.SetHook(hook)
-	stepState.Set("config", packerConfig)
+	stepState.SetPackerConfig(packerConfig)
 	stepState.SetSettings(settings)
 	stepState.SetClient(client)
 	stepState.SetBuilderID(BuilderID)

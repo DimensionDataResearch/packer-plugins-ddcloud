@@ -10,7 +10,10 @@ import (
 )
 
 // ResolveSourceImage is the step that resolves the source image from CloudControl.
-type ResolveSourceImage struct{}
+type ResolveSourceImage struct {
+	// If true, then the source image must be a customer image.
+	MustBeCustomerImage bool
+}
 
 // Run is called to perform the step's action.
 //
@@ -30,7 +33,7 @@ func (step *ResolveSourceImage) Run(state multistep.StateBag) multistep.StepActi
 
 		return multistep.ActionHalt
 	}
-	if osImage != nil {
+	if !step.MustBeCustomerImage && osImage != nil {
 		image = osImage
 	} else {
 		// Fall back to customer image.
