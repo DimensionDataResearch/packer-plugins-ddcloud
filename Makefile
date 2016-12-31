@@ -18,35 +18,23 @@ clean:
 # Perform a development (current-platform-only) build of all plugins and publish them to ~/.packer.d/plugins.
 dev: version fmt dev-builders dev-postprocessors
 
-# Perform a development (current-platform-only) build of all builder plugins and publish them to ~/.packer.d/plugins.
-dev-builders: version fmt
-	cd builders && make dev
-
-# Perform a development (current-platform-only) build of all builder plugins and publish them to ~/.packer.d/plugins.
-dev-postprocessors: version fmt
-	cd postprocessors && make dev
+# Perform a development (current-platform-only) build of all plugins of a specific type and publish them to ~/.packer.d/plugins.
+dev-%: version fmt
+	cd $* && make dev
 
 # Perform a full (all-platforms) build of all plugins.
 build: version fmt build-builders build-postprocessors
 
-# Perform a full (all-platforms) build of all builder plugins.
-build-builders: version fmt
-	cd builders && make build
-
-# Perform a full (all-platforms) build of all post-processor plugins.
-build-postprocessors: version fmt
-	cd postprocessors && make build
+# Perform a full (all-platforms) build of all plugins of a specific type.
+build-%: version fmt
+	cd $* && make build
 
 # Produce archives containing all plugins for a GitHub release.
 dist: dist-builders dist-postprocessors
 
-# Produce archives containing builder plugins for a GitHub release.
-dist-builders:
-	cd builders && make dist
-
-# Produce archives containing post-processor plugins for a GitHub release.
-dist-postprocessors:
-	cd postprocessors && make dist
+# Produce archives containing all plugins of a specific type for a GitHub release.
+dist-%:
+	cd $* && make dist
 
 # Run most tests.
 test: fmt # TODO: Add test targets
