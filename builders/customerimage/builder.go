@@ -22,7 +22,7 @@ import (
 )
 
 // BuilderID is the unique Id for the ddcloud builder
-const BuilderID = "dimension-data-research.ddcloud"
+const BuilderID = "ddcloud.image"
 
 // Builder is the Builder plugin for Packer.
 type Builder struct {

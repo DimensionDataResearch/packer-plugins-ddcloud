@@ -287,3 +287,18 @@ func (state State) GetTargetImageArtifact() *artifacts.Image {
 func (state State) SetTargetImageArtifact(imageArtifact *artifacts.Image) {
 	state.Data.Put("target_image_artifact", imageArtifact)
 }
+
+// GetRemoteOVFPackageArtifact gets the remote OVF package artifact from the state data.
+func (state State) GetRemoteOVFPackageArtifact() *artifacts.RemoteOVFPackage {
+	value, ok := state.Data.GetOk("remote_ovf_package_artifact")
+	if !ok || value == nil {
+		return nil
+	}
+
+	return value.(*artifacts.RemoteOVFPackage)
+}
+
+// SetRemoteOVFPackageArtifact updates the remote OVF package artifact in the state data.
+func (state State) SetRemoteOVFPackageArtifact(packageArtifact *artifacts.RemoteOVFPackage) {
+	state.Data.Put("remote_ovf_package_artifact", packageArtifact)
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/mitchellh/packer/packer"
 	"github.com/mitchellh/packer/template/interpolate"
 
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/artifacts"
 	confighelper "github.com/mitchellh/packer/helper/config"
 )
 
@@ -74,9 +75,29 @@ func (postProcessor *PostProcessor) Configure(settings ...interface{}) (err erro
 // If an error occurs, it should return that error.
 // If `keep` is to true, then the previous artifact is forcibly kept.
 func (postProcessor *PostProcessor) PostProcess(ui packer.Ui, sourceArtifact packer.Artifact) (destinationArtifact packer.Artifact, keep bool, err error) {
+	if sourceArtifact.BuilderId() != "ddcloud.image" {
+		err = fmt.Errorf("The source artifact is not a CloudControl image.")
+
+		return
+	}
+
 	settings := postProcessor.settings
 	packerConfig := &settings.PackerConfig
 	client := postProcessor.client
+
+	var targetImage *compute.CustomerImage
+	targetImageID := sourceArtifact.Id()
+	targetImage, err = client.GetCustomerImage(targetImageID)
+	if err != nil {
+		return
+	}
+	if targetImage == nil {
+		err = fmt.Errorf("Cannot find customer image '%s'",
+			targetImageID,
+		)
+
+		return
+	}
 
 	stepState := helpers.ForStateBag(
 		&multistep.BasicStateBag{},
@@ -85,6 +106,11 @@ func (postProcessor *PostProcessor) PostProcess(ui packer.Ui, sourceArtifact pac
 	stepState.SetPackerConfig(packerConfig)
 	stepState.SetSettings(settings)
 	stepState.SetClient(client)
+	stepState.SetTargetImage(targetImage)
+	stepState.SetTargetImageArtifact(&artifacts.Image{
+		Image:     targetImage,
+		BuilderID: sourceArtifact.BuilderId(),
+	})
 	postProcessor.runner.Run(stepState.Data)
 
 	err = stepState.GetLastError()
@@ -92,10 +118,7 @@ func (postProcessor *PostProcessor) PostProcess(ui packer.Ui, sourceArtifact pac
 		return
 	}
 
-	// TODO: Validate exported image artifact.
-
-	// Actually failing here because it's not implemented yet.
-	err = fmt.Errorf("One or more steps failed to complete")
+	destinationArtifact = stepState.GetRemoteOVFPackageArtifact()
 
 	return
 }

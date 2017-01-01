@@ -17,8 +17,6 @@ type Settings struct {
 	McpRegion        string `mapstructure:"mcp_region"`
 	McpUser          string `mapstructure:"mcp_user"`
 	McpPassword      string `mapstructure:"mcp_password"`
-	DatacenterID     string `mapstructure:"datacenter"`
-	SourceImage      string `mapstructure:"source_image"`
 	OVFPackagePrefix string `mapstructure:"ovf_package_prefix"`
 }
 
@@ -62,16 +60,6 @@ func (settings *Settings) Validate() (err error) {
 				fmt.Errorf("'mcp_password' has not been specified in settings and the MCP_PASSWORD environment variable has not been set"),
 			)
 		}
-	}
-	if settings.DatacenterID == "" {
-		err = packer.MultiErrorAppend(err,
-			fmt.Errorf("'datacenter' has not been specified in settings"),
-		)
-	}
-	if settings.SourceImage == "" {
-		err = packer.MultiErrorAppend(err,
-			fmt.Errorf("'source_image' has not been specified in settings"),
-		)
 	}
 	if settings.OVFPackagePrefix == "" {
 		err = packer.MultiErrorAppend(err,

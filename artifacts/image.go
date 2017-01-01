@@ -9,11 +9,9 @@ import (
 
 // Image represents a CloudControl image as a Packer Artifact.
 type Image struct {
-	Server        compute.Server
-	NetworkDomain compute.NetworkDomain
-	Image         compute.CustomerImage
-	BuilderID     string
-	deleteImage   func() error
+	Image       compute.Image
+	BuilderID   string
+	deleteImage func() error
 }
 
 // BuilderId returns the ID of the builder that was used to create the artifact.
@@ -30,23 +28,23 @@ func (artifact *Image) Files() []string {
 // Id gets the ID for the artifact.
 // In this case, it's the image Id.
 func (artifact *Image) Id() string {
-	return artifact.Image.ID
+	return artifact.Image.GetID()
 }
 
 // Returns human-readable output that describes the artifact created.
 // This is used for UI output. It can be multiple lines.
 func (artifact *Image) String() string {
 	return fmt.Sprintf("Customer image '%s' ('%s') in datacenter '%s'.",
-		artifact.Image.Name,
-		artifact.Image.ID,
-		artifact.Image.DataCenterID,
+		artifact.Image.GetName(),
+		artifact.Image.GetID(),
+		artifact.Image.GetDatacenterID(),
 	)
 }
 
 // State allows the caller to ask for builder specific state information
 // relating to the artifact instance.
 func (artifact *Image) State(name string) interface{} {
-	return nil // No specific state yet.
+	return artifact.Image.GetState()
 }
 
 // Destroy deletes the artifact. Packer calls this for various reasons,

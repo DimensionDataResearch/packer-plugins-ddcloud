@@ -4,9 +4,10 @@ import (
 	"fmt"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/artifacts"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
-	"github.com/mitchellh/packer/packer"
 )
 
 // ResolveSourceImage is the step that resolves the source image from CloudControl.
@@ -18,12 +19,13 @@ type ResolveSourceImage struct {
 // Run is called to perform the step's action.
 //
 // The return value determines whether multi-step sequences should continue or halt.
-func (step *ResolveSourceImage) Run(state multistep.StateBag) multistep.StepAction {
-	ui := state.Get("ui").(packer.Ui)
+func (step *ResolveSourceImage) Run(stateBag multistep.StateBag) multistep.StepAction {
+	state := helpers.ForStateBag(stateBag)
+	ui := state.GetUI()
 
-	settings := state.Get("settings").(*config.Settings)
-	client := state.Get("client").(*compute.Client)
-	networkDomain := state.Get("network_domain").(*compute.NetworkDomain)
+	settings := state.GetSettings().(*config.Settings)
+	client := state.GetClient()
+	networkDomain := state.GetNetworkDomain()
 
 	var image compute.Image
 
@@ -58,7 +60,10 @@ func (step *ResolveSourceImage) Run(state multistep.StateBag) multistep.StepActi
 		return multistep.ActionHalt
 	}
 
-	state.Put("source_image", image)
+	state.SetSourceImage(image)
+	state.SetSourceImageArtifact(&artifacts.Image{
+		Image: image,
+	})
 
 	return multistep.ActionContinue
 }
