@@ -8,6 +8,14 @@
 			"revision": "bfdb1a85537d60bc7e954e600c250219ea497417",
 			"branch": "master",
 			"notests": true
+		},
+		{
+			"importpath": "github.com/secsy/goftp",
+			"repository": "https://github.com/secsy/goftp",
+			"vcs": "git",
+			"revision": "848bd83f73185175b43f6093f1639af3b463b889",
+			"branch": "master",
+			"notests": true
 		}
 	]
 }
