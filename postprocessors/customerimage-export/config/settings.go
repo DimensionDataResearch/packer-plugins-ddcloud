@@ -14,12 +14,12 @@ import (
 type Settings struct {
 	PackerConfig common.PackerConfig `mapstructure:",squash"`
 
-	McpRegion    string `mapstructure:"mcp_region"`
-	McpUser      string `mapstructure:"mcp_user"`
-	McpPassword  string `mapstructure:"mcp_password"`
-	DatacenterID string `mapstructure:"datacenter"`
-	SourceImage  string `mapstructure:"source_image"`
-	ExportName   string `mapstructure:"name"`
+	McpRegion        string `mapstructure:"mcp_region"`
+	McpUser          string `mapstructure:"mcp_user"`
+	McpPassword      string `mapstructure:"mcp_password"`
+	DatacenterID     string `mapstructure:"datacenter"`
+	SourceImage      string `mapstructure:"source_image"`
+	OVFPackagePrefix string `mapstructure:"ovf_package_prefix"`
 }
 
 var _ helpers.PluginConfig = &Settings{}
@@ -73,9 +73,9 @@ func (settings *Settings) Validate() (err error) {
 			fmt.Errorf("'source_image' has not been specified in settings"),
 		)
 	}
-	if settings.ExportName == "" {
+	if settings.OVFPackagePrefix == "" {
 		err = packer.MultiErrorAppend(err,
-			fmt.Errorf("'name' has not been specified in settings"),
+			fmt.Errorf("'ovf_package_prefix' has not been specified in settings"),
 		)
 	}
 

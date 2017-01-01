@@ -62,6 +62,7 @@ func (postProcessor *PostProcessor) Configure(settings ...interface{}) (err erro
 			&steps.ResolveSourceImage{
 				MustBeCustomerImage: true,
 			},
+			&steps.ExportCustomerImage{},
 		},
 	}
 
