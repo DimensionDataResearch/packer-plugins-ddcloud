@@ -12,7 +12,7 @@ import (
 	"github.com/mitchellh/multistep"
 )
 
-// ExportCustomerImage is the step that exports a customer image as an OVF package.
+// ExportCustomerImage is the step that exports a customer image to an OVF package.
 type ExportCustomerImage struct{}
 
 // Run is called to perform the step's action.
