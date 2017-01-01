@@ -153,6 +153,21 @@ func (state State) SetClient(client *compute.Client) {
 	state.Data.Put("client", client)
 }
 
+// GetTargetDatacenter gets the target datacenter from the state data.
+func (state State) GetTargetDatacenter() *compute.Datacenter {
+	value, ok := state.Data.GetOk("target_datacenter")
+	if !ok || value == nil {
+		return nil
+	}
+
+	return value.(*compute.Datacenter)
+}
+
+// SetTargetDatacenter updates the target datacenter in the state data.
+func (state State) SetTargetDatacenter(datacenter *compute.Datacenter) {
+	state.Data.Put("target_datacenter", datacenter)
+}
+
 // GetNetworkDomain gets the target network domain from the state data.
 func (state State) GetNetworkDomain() *compute.NetworkDomain {
 	value, ok := state.Data.GetOk("network_domain")

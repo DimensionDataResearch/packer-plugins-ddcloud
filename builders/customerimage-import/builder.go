@@ -7,6 +7,7 @@ import (
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage-import/config"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/steps"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
 	"github.com/mitchellh/packer/template/interpolate"
@@ -57,10 +58,29 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 		builder.client.EnableExtendedLogging()
 	}
 
+	// Resolve the target datacenter.
+	var targetDatacenter *compute.Datacenter
+	targetDatacenter, err = builder.client.GetDatacenter(
+		builder.settings.DatacenterID,
+	)
+	if err != nil {
+		return
+	}
+	if targetDatacenter == nil {
+		err = fmt.Errorf("Cannot find target datacenter '%s'",
+			builder.settings.DatacenterID,
+		)
+
+		return
+	}
+
 	// Configure builder execution logic.
 	builder.runner = &multistep.BasicRunner{
 		Steps: []multistep.Step{
-		// TODO: Implement ImportCustomerImage step.
+			&steps.ResolveDatacenter{
+				AsTarget: true,
+			},
+			// TODO: Implement ImportCustomerImage step.
 		},
 	}
 
