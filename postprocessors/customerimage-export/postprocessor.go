@@ -61,6 +61,8 @@ func (postProcessor *PostProcessor) Configure(settings ...interface{}) (err erro
 	postProcessor.runner = &multistep.BasicRunner{
 		Steps: []multistep.Step{
 			&steps.ResolveSourceImage{
+				ImageName:           postProcessor.settings.TargetImageName,
+				DatacenterID:        postProcessor.settings.DatacenterID,
 				MustBeCustomerImage: true,
 			},
 			&steps.ExportCustomerImage{},

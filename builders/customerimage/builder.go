@@ -72,7 +72,10 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 		Steps: []multistep.Step{
 			&steps.ResolveNetworkDomain{},
 			&steps.ResolveVLAN{},
-			&steps.ResolveSourceImage{},
+			&steps.ResolveSourceImage{
+				ImageName:    builder.settings.SourceImage,
+				DatacenterID: builder.settings.DatacenterID,
+			},
 			&steps.CheckTargetImage{},
 			&steps.DeployServer{},
 			&steps.CreateNATRule{},

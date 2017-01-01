@@ -5,13 +5,18 @@ import (
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/artifacts"
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
 )
 
 // ResolveSourceImage is the step that resolves the source image from CloudControl.
 type ResolveSourceImage struct {
+	// The name of the source image.
+	ImageName string
+
+	// The name of the target image.
+	DatacenterID string
+
 	// If true, then the source image must be a customer image.
 	MustBeCustomerImage bool
 }
@@ -23,13 +28,11 @@ func (step *ResolveSourceImage) Run(stateBag multistep.StateBag) multistep.StepA
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
 
-	settings := state.GetSettings().(*config.Settings)
 	client := state.GetClient()
-	networkDomain := state.GetNetworkDomain()
 
 	var image compute.Image
 
-	osImage, err := client.FindOSImage(settings.SourceImage, networkDomain.DatacenterID)
+	osImage, err := client.FindOSImage(step.ImageName, step.DatacenterID)
 	if err != nil {
 		ui.Error(err.Error())
 
@@ -39,7 +42,7 @@ func (step *ResolveSourceImage) Run(stateBag multistep.StateBag) multistep.StepA
 		image = osImage
 	} else {
 		// Fall back to customer image.
-		customerImage, err := client.FindCustomerImage(settings.SourceImage, networkDomain.DatacenterID)
+		customerImage, err := client.FindCustomerImage(step.ImageName, step.DatacenterID)
 		if err != nil {
 			ui.Error(err.Error())
 
@@ -53,8 +56,8 @@ func (step *ResolveSourceImage) Run(stateBag multistep.StateBag) multistep.StepA
 	if image == nil {
 		ui.Error(fmt.Sprintf(
 			"Image '%s' not found in datacenter '%s'.",
-			settings.SourceImage,
-			networkDomain.DatacenterID,
+			step.ImageName,
+			step.DatacenterID,
 		))
 
 		return multistep.ActionHalt
