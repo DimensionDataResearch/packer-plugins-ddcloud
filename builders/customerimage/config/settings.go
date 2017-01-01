@@ -12,7 +12,7 @@ import (
 	"github.com/mitchellh/packer/packer"
 )
 
-// Settings represents the settings for the Builder.
+// Settings represents the settings for the customer image builder.
 type Settings struct {
 	PackerConfig       common.PackerConfig `mapstructure:",squash"`
 	CommunicatorConfig communicator.Config `mapstructure:",squash"`

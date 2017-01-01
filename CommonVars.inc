@@ -1,7 +1,7 @@
 VERSION = 0.1.1
 VERSION_INFO_FILE = ./version-info.go
 
-BUILDER_PLUGIN_NAMES = customerimage
+BUILDER_PLUGIN_NAMES = customerimage customerimage-import
 POSTPROCESSOR_PLUGIN_NAMES = customerimage-export
 
 REPO_BASE           = github.com/DimensionDataResearch

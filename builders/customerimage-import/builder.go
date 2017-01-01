@@ -4,27 +4,20 @@ import (
 	"fmt"
 	"os"
 
-	"crypto/rand"
-	"encoding/hex"
-
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage-import/config"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/steps"
 	"github.com/mitchellh/multistep"
-	"github.com/mitchellh/packer/common"
-	"github.com/mitchellh/packer/helper/communicator"
 	"github.com/mitchellh/packer/packer"
 	"github.com/mitchellh/packer/template/interpolate"
 
 	confighelper "github.com/mitchellh/packer/helper/config"
-	gossh "golang.org/x/crypto/ssh"
 )
 
 // BuilderID is the unique Id for the ddcloud builder
 const BuilderID = "ddcloud.image"
 
-// Builder is the customer image builder plugin for Packer.
+// Builder is the customer image import builder plugin for Packer.
 type Builder struct {
 	settings             *config.Settings
 	interpolationContext interpolate.Context
@@ -50,9 +43,6 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 		return
 	}
 
-	builder.settings.UniquenessKey = createUniquenessKey()
-	builder.settings.ServerName = fmt.Sprintf("packer-build-%s", builder.settings.UniquenessKey)
-
 	err = builder.settings.Validate()
 	if err != nil {
 		return
@@ -70,25 +60,7 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 	// Configure builder execution logic.
 	builder.runner = &multistep.BasicRunner{
 		Steps: []multistep.Step{
-			&steps.ResolveNetworkDomain{},
-			&steps.ResolveVLAN{},
-			&steps.ResolveSourceImage{
-				ImageName:    builder.settings.SourceImage,
-				DatacenterID: builder.settings.DatacenterID,
-			},
-			&steps.CheckTargetImage{},
-			&steps.DeployServer{},
-			&steps.CreateNATRule{},
-			&steps.CreateFirewallRule{},
-			&communicator.StepConnect{
-				Config:      &builder.settings.CommunicatorConfig,
-				Host:        getSSHHost,
-				SSHPort:     getSSHPort,
-				SSHConfig:   getSSHConfig,
-				WinRMConfig: getWinRMConfig,
-			},
-			&common.StepProvision{},
-			&steps.CloneServer{},
+		// TODO: Implement ImportCustomerImage step.
 		},
 	}
 
@@ -119,6 +91,7 @@ func (builder *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) 
 
 	imageArtifact := stepState.GetTargetImageArtifact()
 	if imageArtifact == nil {
+		// TODO: This currently fails because the step sequence has not actually been implemented yet.
 		return nil, fmt.Errorf("One or more steps failed to complete")
 	}
 
@@ -130,47 +103,4 @@ func (builder *Builder) Cancel() {
 	if builder.client != nil {
 		builder.client.Cancel()
 	}
-}
-
-func createUniquenessKey() string {
-	uniquenessKeyBytes := make([]byte, 5)
-	rand.Read(uniquenessKeyBytes)
-
-	return hex.EncodeToString(uniquenessKeyBytes)
-}
-
-func getSSHHost(state multistep.StateBag) (host string, err error) {
-	settings := state.Get("settings").(*config.Settings)
-	host = settings.CommunicatorConfig.SSHHost
-
-	return
-}
-
-func getSSHPort(state multistep.StateBag) (port int, err error) {
-	settings := state.Get("settings").(*config.Settings)
-	port = settings.CommunicatorConfig.SSHPort
-
-	return
-}
-
-func getSSHConfig(state multistep.StateBag) (clientConfig *gossh.ClientConfig, err error) {
-	settings := state.Get("settings").(*config.Settings)
-	clientConfig = &gossh.ClientConfig{
-		User: settings.CommunicatorConfig.SSHUsername,
-		Auth: []gossh.AuthMethod{
-			gossh.Password(settings.CommunicatorConfig.SSHPassword),
-		},
-	}
-
-	return
-}
-
-func getWinRMConfig(state multistep.StateBag) (winRMConfig *communicator.WinRMConfig, err error) {
-	settings := state.Get("settings").(*config.Settings)
-	winRMConfig = &communicator.WinRMConfig{
-		Username: settings.CommunicatorConfig.WinRMUser,
-		Password: settings.CommunicatorConfig.WinRMPassword,
-	}
-
-	return
 }
