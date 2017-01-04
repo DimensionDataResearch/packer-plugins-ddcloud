@@ -13,6 +13,12 @@ type PluginConfig interface {
 	// GetCommunicatorConfig retrieves the Packer communicator configuration (if available) for the plugin.
 	GetCommunicatorConfig() *communicator.Config
 
+	// GetMCPUser retrieves the Cloud Control user name.
+	GetMCPUser() string
+
+	// GetMCPPassword retrieves the Cloud Control password.
+	GetMCPPassword() string
+
 	// Validate ensures that the configuration is valid.
 	Validate() error
 }

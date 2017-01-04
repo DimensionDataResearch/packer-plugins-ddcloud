@@ -34,6 +34,16 @@ func (settings *Settings) GetCommunicatorConfig() *communicator.Config {
 	return nil
 }
 
+// GetMCPUser retrieves the Cloud Control user name.
+func (settings *Settings) GetMCPUser() string {
+	return settings.McpUser
+}
+
+// GetMCPPassword retrieves the Cloud Control password.
+func (settings *Settings) GetMCPPassword() string {
+	return settings.McpPassword
+}
+
 // Validate determines if the settings is valid.
 func (settings *Settings) Validate() (err error) {
 	if settings.McpRegion == "" {

@@ -269,8 +269,8 @@ func (state State) GetSourceImageArtifact() *artifacts.Image {
 }
 
 // SetSourceImageArtifact updates the source image artifact in the state data.
-func (state State) SetSourceImageArtifact(imageArtifact *artifacts.Image) {
-	state.Data.Put("source_image_artifact", imageArtifact)
+func (state State) SetSourceImageArtifact(sourceArtifact *artifacts.Image) {
+	state.Data.Put("source_image_artifact", sourceArtifact)
 }
 
 // GetTargetImage gets the target image from the state data.
@@ -299,8 +299,8 @@ func (state State) GetTargetImageArtifact() *artifacts.Image {
 }
 
 // SetTargetImageArtifact updates the target image artifact in the state data.
-func (state State) SetTargetImageArtifact(imageArtifact *artifacts.Image) {
-	state.Data.Put("target_image_artifact", imageArtifact)
+func (state State) SetTargetImageArtifact(sourceArtifact *artifacts.Image) {
+	state.Data.Put("target_image_artifact", sourceArtifact)
 }
 
 // GetRemoteOVFPackageArtifact gets the remote OVF package artifact from the state data.
@@ -316,4 +316,34 @@ func (state State) GetRemoteOVFPackageArtifact() *artifacts.RemoteOVFPackage {
 // SetRemoteOVFPackageArtifact updates the remote OVF package artifact in the state data.
 func (state State) SetRemoteOVFPackageArtifact(packageArtifact *artifacts.RemoteOVFPackage) {
 	state.Data.Put("remote_ovf_package_artifact", packageArtifact)
+}
+
+// GetSourceArtifact gets the source artifact from the state data.
+func (state State) GetSourceArtifact() packer.Artifact {
+	value, ok := state.Data.GetOk("source_artifact")
+	if !ok || value == nil {
+		return nil
+	}
+
+	return value.(*artifacts.Image)
+}
+
+// SetSourceArtifact updates the source artifact in the state data.
+func (state State) SetSourceArtifact(sourceArtifact packer.Artifact) {
+	state.Data.Put("source_artifact", sourceArtifact)
+}
+
+// GetTargetArtifact gets the target artifact from the state data.
+func (state State) GetTargetArtifact() packer.Artifact {
+	value, ok := state.Data.GetOk("target_artifact")
+	if !ok || value == nil {
+		return nil
+	}
+
+	return value.(*artifacts.Image)
+}
+
+// SetTargetArtifact updates the target artifact in the state data.
+func (state State) SetTargetArtifact(targetArtifact packer.Artifact) {
+	state.Data.Put("target_artifact", targetArtifact)
 }
