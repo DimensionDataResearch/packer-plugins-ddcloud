@@ -2,7 +2,7 @@ VERSION = 0.1.1
 VERSION_INFO_FILE = ./version-info.go
 
 BUILDER_PLUGIN_NAMES = customerimage customerimage-import
-POSTPROCESSOR_PLUGIN_NAMES = customerimage-export
+POSTPROCESSOR_PLUGIN_NAMES = customerimage-export customerimage-import
 
 REPO_BASE           = github.com/DimensionDataResearch
 REPO_ROOT           = $(REPO_BASE)/packer-plugins-ddcloud

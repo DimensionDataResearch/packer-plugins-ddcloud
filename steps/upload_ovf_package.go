@@ -4,10 +4,11 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
-	"path"
-
 	"os"
+	"path"
+	"strings"
 
+	"github.com/DimensionDataResearch/packer-plugins-ddcloud/artifacts"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
@@ -15,6 +16,10 @@ import (
 )
 
 // UploadOVFPackage is the step that uploads the files comprising an OVF package to CloudControl.
+//
+// Expects:
+//   - Target data center in state from ResolveDatacenter step.
+//   - OVF package files from source artifact in state from ConvertVMXToOVF step.
 type UploadOVFPackage struct{}
 
 // Run is called to perform the step's action.
@@ -42,7 +47,7 @@ func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAct
 	}
 
 	sourceFiles := sourceArtifact.Files()
-	err := validateOVFPackageArtifactFiles(sourceFiles)
+	err := step.validateOVFPackageFiles(sourceFiles)
 	if err != nil {
 		state.ShowError(err)
 
@@ -69,6 +74,7 @@ func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAct
 	}
 	defer ftpClient.Close()
 
+	packageBaseName := ""
 	for _, sourceFileName := range sourceFiles {
 		if !isOVFPackageFile(sourceFileName) {
 			log.Printf("Skipping file '%s' (does not look like an OVF package file).", sourceFileName)
@@ -80,6 +86,10 @@ func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAct
 		ui.Message(fmt.Sprintf(
 			"Uploading '%s'...", targetFileName,
 		))
+
+		if path.Ext(targetFileName) == ".ovf" {
+			packageBaseName = strings.Replace(targetFileName, ".ofv", "", 1)
+		}
 
 		sourceFile, err := os.Open(sourceFileName)
 		if err != nil {
@@ -105,6 +115,12 @@ func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAct
 		"Uploaded OVF package files to datacenter '%s'.",
 		targetDatacenter.ID,
 	))
+
+	state.SetRemoteOVFPackageArtifact(&artifacts.RemoteOVFPackage{
+		FTPSHostName:  targetDatacenter.FTPSHost,
+		PackagePrefix: packageBaseName,
+		BuilderID:     "ddcloud.ovf",
+	})
 
 	return multistep.ActionContinue
 }
@@ -133,7 +149,7 @@ func isOVFPackageFile(fileName string) bool {
 	return false
 }
 
-func validateOVFPackageArtifactFiles(packageFiles []string) (err error) {
+func (step *UploadOVFPackage) validateOVFPackageFiles(packageFiles []string) (err error) {
 	var haveVMDK, haveOVF, haveMF bool
 	for _, packageFile := range packageFiles {
 		switch path.Ext(packageFile) {

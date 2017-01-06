@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"log"
 
 	"runtime/debug"
@@ -348,6 +349,16 @@ func (state State) SetTargetArtifact(targetArtifact packer.Artifact) {
 	state.Data.Put("target_artifact", targetArtifact)
 }
 
+// ShowMessage displays the specified message via the UI (if available, otherwise via log.Printf).
+func (state State) ShowMessage(message string, formatArgs ...interface{}) {
+	ui := state.GetUI()
+	if ui != nil {
+		ui.Message(fmt.Sprintf(message, formatArgs...))
+	} else {
+		log.Printf(message, formatArgs...)
+	}
+}
+
 // ShowError displays the specified error via the UI, and persists it using SetLastError.
 func (state State) ShowError(err error) {
 	state.SetLastError(err)
@@ -356,4 +367,11 @@ func (state State) ShowError(err error) {
 	if ui != nil {
 		ui.Error(err.Error())
 	}
+}
+
+// ShowErrorMessage displays the specified error message via the UI, and persists it using SetLastError.
+func (state State) ShowErrorMessage(errorMessage string, formatArgs ...interface{}) {
+	state.ShowError(
+		fmt.Errorf(errorMessage, formatArgs...),
+	)
 }

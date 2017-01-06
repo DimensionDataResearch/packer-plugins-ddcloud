@@ -64,8 +64,8 @@ func (artifact *LocalFiles) Destroy() error {
 
 var _ packer.Artifact = &LocalFiles{}
 
-// NewFromFilesInDirectory creates a new LocalFiles artifact from the files in the specified directory.
-func NewFromFilesInDirectory(directory string, builderID string) (artifact *LocalFiles, err error) {
+// NewFromFilesInLocalDirectory creates a new LocalFiles artifact from the files in the specified directory.
+func NewFromFilesInLocalDirectory(directory string, builderID string) (artifact *LocalFiles, err error) {
 	var files []string
 	visitFileSystemEntry := func(path string, info os.FileInfo, visitError error) error {
 		if !info.IsDir() {

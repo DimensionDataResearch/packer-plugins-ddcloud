@@ -10,7 +10,7 @@ import (
 	"github.com/mitchellh/packer/packer"
 )
 
-// Settings represents the settings for the customer image export post-processor.
+// Settings represents the settings for the customer image import post-processor.
 type Settings struct {
 	PackerConfig common.PackerConfig `mapstructure:",squash"`
 
