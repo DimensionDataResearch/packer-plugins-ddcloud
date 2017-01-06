@@ -347,3 +347,13 @@ func (state State) GetTargetArtifact() packer.Artifact {
 func (state State) SetTargetArtifact(targetArtifact packer.Artifact) {
 	state.Data.Put("target_artifact", targetArtifact)
 }
+
+// ShowError displays the specified error via the UI, and persists it using SetLastError.
+func (state State) ShowError(err error) {
+	state.SetLastError(err)
+
+	ui := state.GetUI()
+	if ui != nil {
+		ui.Error(err.Error())
+	}
+}
