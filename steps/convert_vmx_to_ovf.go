@@ -91,6 +91,24 @@ func (step *ConvertVMXToOVF) Run(stateBag multistep.StateBag) multistep.StepActi
 
 			return multistep.ActionHalt
 		}
+	} else {
+		// Verify that target directory does not exist.
+		_, err := os.Stat(step.OutputDir)
+		if err != nil && !os.IsNotExist(err) {
+			state.ShowError(fmt.Errorf(
+				"Output directory '%s' already exists",
+				step.OutputDir,
+			))
+
+			return multistep.ActionHalt
+		}
+
+		err = os.MkdirAll(step.OutputDir, 0700 /* u=rwx */)
+		if err != nil {
+			state.ShowError(err)
+
+			return multistep.ActionHalt
+		}
 	}
 
 	ovfFile := path.Join(step.OutputDir,
@@ -126,8 +144,13 @@ func (step *ConvertVMXToOVF) Run(stateBag multistep.StateBag) multistep.StepActi
 		return multistep.ActionHalt
 	}
 
-	// TODO: Implement artifacts.LocalOVFPackage
-	// TODO: state.SetSourceArtifact(&artifacts.LocalOVFPackage{x,y,z})
+	ovfArtifact, err := artifacts.NewFromFilesInDirectory(step.OutputDir, "ddcloud.ovf")
+	if err != nil {
+		state.ShowError(err)
+
+		return multistep.ActionHalt
+	}
+	state.SetSourceArtifact(ovfArtifact)
 
 	return multistep.ActionContinue
 }

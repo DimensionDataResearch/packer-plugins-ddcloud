@@ -31,11 +31,20 @@ func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAct
 	))
 
 	sourceArtifact := state.GetSourceArtifact()
+	if sourceArtifact.BuilderId() != "ddcloud.ovf" {
+		state.ShowError(fmt.Errorf(
+			"Source image '%s' is of type '%s' (expected 'ddcloud.ovf')",
+			sourceArtifact.Id(),
+			sourceArtifact.BuilderId(),
+		))
+
+		return multistep.ActionHalt
+	}
+
 	sourceFiles := sourceArtifact.Files()
 	err := validateOVFPackageArtifactFiles(sourceFiles)
 	if err != nil {
-		state.SetLastError(err)
-		ui.Error(err.Error())
+		state.ShowError(err)
 
 		return multistep.ActionHalt
 	}
@@ -50,11 +59,11 @@ func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAct
 	}
 	ftpClient, err := goftp.DialConfig(ftpConfig, targetDatacenter.FTPSHost)
 	if err != nil {
-		state.SetLastError(err)
 		ui.Error(fmt.Sprintf(
 			"Failed to connect (ftps://%s).",
 			targetDatacenter.FTPSHost,
 		))
+		state.ShowError(err)
 
 		return multistep.ActionHalt
 	}
@@ -74,8 +83,7 @@ func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAct
 
 		sourceFile, err := os.Open(sourceFileName)
 		if err != nil {
-			state.SetLastError(err)
-			ui.Error(err.Error())
+			state.ShowError(err)
 
 			return multistep.ActionHalt
 		}
@@ -83,8 +91,7 @@ func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAct
 
 		err = ftpClient.Store(targetFileName, sourceFile)
 		if err != nil {
-			state.SetLastError(err)
-			ui.Error(err.Error())
+			state.ShowError(err)
 
 			return multistep.ActionHalt
 		}
