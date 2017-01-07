@@ -61,7 +61,7 @@ func (postProcessor *PostProcessor) Configure(settings ...interface{}) (err erro
 		Steps: []multistep.Step{
 			&steps.ResolveDatacenter{
 				DatacenterID: postProcessor.settings.DatacenterID,
-				AsSource:     true,
+				AsTarget:     true,
 			},
 			&steps.ConvertVMXToOVF{
 				PackageName:     postProcessor.settings.OVFPackagePrefix,

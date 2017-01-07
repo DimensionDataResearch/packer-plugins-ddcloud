@@ -186,8 +186,8 @@ func (step *ConvertVMXToOVF) getSourceVMXFile(state helpers.State) (vmxFilePath 
 		return
 	}
 
-	vmxFile := artifacts.GetFirstFileWithExtension(".vmx", sourceArtifact)
-	if vmxFile == "" {
+	vmxFilePath = artifacts.GetFirstFileWithExtension(".vmx", sourceArtifact)
+	if vmxFilePath == "" {
 		err = fmt.Errorf(
 			"Cannot find .vmx file in source artifact '%s'.",
 			sourceArtifact.Id(),
@@ -195,6 +195,9 @@ func (step *ConvertVMXToOVF) getSourceVMXFile(state helpers.State) (vmxFilePath 
 
 		return
 	}
+
+	currentDir, _ := os.Getwd()
+	vmxFilePath = path.Join(currentDir, vmxFilePath)
 
 	return
 }

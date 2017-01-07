@@ -326,7 +326,7 @@ func (state State) GetSourceArtifact() packer.Artifact {
 		return nil
 	}
 
-	return value.(*artifacts.Image)
+	return value.(packer.Artifact)
 }
 
 // SetSourceArtifact updates the source artifact in the state data.
@@ -341,7 +341,7 @@ func (state State) GetTargetArtifact() packer.Artifact {
 		return nil
 	}
 
-	return value.(*artifacts.Image)
+	return value.(packer.Artifact)
 }
 
 // SetTargetArtifact updates the target artifact in the state data.

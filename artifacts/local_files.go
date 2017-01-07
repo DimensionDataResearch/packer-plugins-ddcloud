@@ -39,7 +39,7 @@ func (artifact *LocalFiles) String() string {
 		artifact.BaseDirectory,
 	)
 
-	skipBaseDirectoryChars := len(artifact.BaseDirectory)
+	skipBaseDirectoryChars := len(artifact.BaseDirectory) + 1
 	for _, filePath := range artifact.FilePaths {
 		result += fmt.Sprintf("- '%s'\n",
 			filePath[skipBaseDirectoryChars:],

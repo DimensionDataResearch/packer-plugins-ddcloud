@@ -28,7 +28,13 @@ type UploadOVFPackage struct{}
 func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAction {
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
+
 	targetDatacenter := state.GetTargetDatacenter()
+	if targetDatacenter == nil {
+		state.ShowErrorMessage("Cannot found target datacenter in state data.")
+
+		return multistep.ActionHalt
+	}
 
 	ui.Message(fmt.Sprintf(
 		"Uploading OVF package files to datacenter '%s'...",
@@ -45,6 +51,8 @@ func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAct
 
 		return multistep.ActionHalt
 	}
+
+	log.Printf("UploadOVFPackage: source package is %s", sourceArtifact.String())
 
 	sourceFiles := sourceArtifact.Files()
 	err := step.validateOVFPackageFiles(sourceFiles)
@@ -152,16 +160,11 @@ func isOVFPackageFile(fileName string) bool {
 func (step *UploadOVFPackage) validateOVFPackageFiles(packageFiles []string) (err error) {
 	var haveVMDK, haveOVF, haveMF bool
 	for _, packageFile := range packageFiles {
-		switch path.Ext(packageFile) {
-		case ".vmdk":
-			haveVMDK = true
+		log.Printf("UploadOVFPackage: validating package file '%s'...", packageFile)
 
-		case ".ovf":
-			haveOVF = true
-
-		case ".mf":
-			haveMF = true
-		}
+		haveVMDK = haveVMDK || strings.HasSuffix(packageFile, ".vmdk") || strings.HasSuffix(packageFile, ".vmdk.gz")
+		haveOVF = haveOVF || strings.HasSuffix(packageFile, ".ovf")
+		haveMF = haveMF || strings.HasSuffix(packageFile, ".mf")
 	}
 
 	if !haveMF {
