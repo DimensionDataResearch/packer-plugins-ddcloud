@@ -3,13 +3,14 @@ package steps
 import (
 	"fmt"
 
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
 )
 
 // CheckTargetImage is the step that ensures the target image does not already exist in CloudControl.
-type CheckTargetImage struct{}
+type CheckTargetImage struct {
+	TargetImage string
+}
 
 // Run is called to perform the step's action.
 //
@@ -18,10 +19,10 @@ func (step *CheckTargetImage) Run(stateBag multistep.StateBag) multistep.StepAct
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
 
-	settings := state.GetSettings().(*config.Settings)
 	client := state.GetClient()
+	targetDatacenter := state.GetTargetDatacenter()
 
-	targetImage, err := client.FindCustomerImage(settings.TargetImage, settings.DatacenterID)
+	targetImage, err := client.FindCustomerImage(step.TargetImage, targetDatacenter.ID)
 	if err != nil {
 		ui.Error(err.Error())
 
@@ -31,8 +32,8 @@ func (step *CheckTargetImage) Run(stateBag multistep.StateBag) multistep.StepAct
 	if targetImage != nil {
 		ui.Error(fmt.Sprintf(
 			"Target image '%s' already exists in datacenter '%s'.",
-			settings.TargetImage,
-			settings.DatacenterID,
+			step.TargetImage,
+			targetDatacenter.ID,
 		))
 
 		return multistep.ActionHalt

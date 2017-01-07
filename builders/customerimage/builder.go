@@ -70,13 +70,19 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 	// Configure builder execution logic.
 	builder.runner = &multistep.BasicRunner{
 		Steps: []multistep.Step{
+			&steps.ResolveDatacenter{
+				DatacenterID: builder.settings.DatacenterID,
+				AsTarget:     true,
+			},
 			&steps.ResolveNetworkDomain{},
 			&steps.ResolveVLAN{},
 			&steps.ResolveSourceImage{
 				ImageName:    builder.settings.SourceImage,
 				DatacenterID: builder.settings.DatacenterID,
 			},
-			&steps.CheckTargetImage{},
+			&steps.CheckTargetImage{
+				TargetImage: builder.settings.TargetImage,
+			},
 			&steps.DeployServer{},
 			&steps.CreateNATRule{},
 			&steps.CreateFirewallRule{},

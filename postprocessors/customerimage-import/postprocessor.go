@@ -63,6 +63,9 @@ func (postProcessor *PostProcessor) Configure(settings ...interface{}) (err erro
 				DatacenterID: postProcessor.settings.DatacenterID,
 				AsTarget:     true,
 			},
+			&steps.CheckTargetImage{
+				TargetImage: postProcessor.settings.TargetImageName,
+			},
 			&steps.ConvertVMXToOVF{
 				PackageName:     postProcessor.settings.OVFPackagePrefix,
 				OutputDir:       "",   // Create a new use new temporary directory
