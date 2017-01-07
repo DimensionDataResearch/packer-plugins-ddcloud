@@ -3,13 +3,15 @@ package steps
 import (
 	"fmt"
 
-	"github.com/DimensionDataResearch/packer-plugins-ddcloud/builders/customerimage/config"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
 )
 
 // ResolveDatacenter is the step that resolves the target datacenter from CloudControl.
 type ResolveDatacenter struct {
+	// The Id of the datacenter to resolve.
+	DatacenterID string
+
 	// Should the datacenter being resolved be treated as the source datacenter?
 	AsSource bool
 
@@ -24,15 +26,14 @@ func (step *ResolveDatacenter) Run(stateBag multistep.StateBag) multistep.StepAc
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
 
-	settings := state.GetSettings().(*config.Settings)
 	client := state.GetClient()
 
 	ui.Message(fmt.Sprintf(
 		"Resolving datacenter '%s'...",
-		settings.DatacenterID,
+		step.DatacenterID,
 	))
 
-	datacenter, err := client.GetDatacenter(settings.DatacenterID)
+	datacenter, err := client.GetDatacenter(step.DatacenterID)
 	if err != nil {
 		ui.Error(err.Error())
 
@@ -41,7 +42,7 @@ func (step *ResolveDatacenter) Run(stateBag multistep.StateBag) multistep.StepAc
 	if datacenter == nil {
 		ui.Error(fmt.Sprintf(
 			"Unable to find datacenter '%s'.",
-			settings.DatacenterID,
+			step.DatacenterID,
 		))
 
 		return multistep.ActionHalt
@@ -52,7 +53,7 @@ func (step *ResolveDatacenter) Run(stateBag multistep.StateBag) multistep.StepAc
 
 	ui.Message(fmt.Sprintf(
 		"Resolved datacenter '%s'.",
-		settings.DatacenterID,
+		step.DatacenterID,
 	))
 
 	return multistep.ActionContinue

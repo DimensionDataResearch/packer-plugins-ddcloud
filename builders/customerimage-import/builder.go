@@ -78,7 +78,8 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 	builder.runner = &multistep.BasicRunner{
 		Steps: []multistep.Step{
 			&steps.ResolveDatacenter{
-				AsTarget: true,
+				DatacenterID: builder.settings.DatacenterID,
+				AsTarget:     true,
 			},
 			// TODO: Implement ImportCustomerImage step.
 		},

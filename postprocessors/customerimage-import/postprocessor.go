@@ -59,7 +59,10 @@ func (postProcessor *PostProcessor) Configure(settings ...interface{}) (err erro
 	// Configure post-processor execution logic.
 	postProcessor.runner = &multistep.BasicRunner{
 		Steps: []multistep.Step{
-			&steps.ResolveDatacenter{},
+			&steps.ResolveDatacenter{
+				DatacenterID: postProcessor.settings.DatacenterID,
+				AsSource:     true,
+			},
 			&steps.ConvertVMXToOVF{
 				PackageName:     postProcessor.settings.OVFPackagePrefix,
 				OutputDir:       "",   // Create a new use new temporary directory
