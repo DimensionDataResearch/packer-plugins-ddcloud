@@ -6,6 +6,9 @@ import (
 	"os"
 )
 
+// The minimum percentage difference to report.
+const MinProgressPercentage = 10
+
 // IOProgress represents I/O progress information.
 type IOProgress struct {
 	CompletedBytes  int64
@@ -19,11 +22,9 @@ type IOProgressFunc func(progress IOProgress)
 // ProgressForReader wraps the specified io.Reader in an io.Reader that invokes progressFunc to report progress.
 func ProgressForReader(innerReader io.Reader, progressFunc IOProgressFunc, totalBytes int64) io.Reader {
 	progressReader := &progressReader{
-		InnerReader:     innerReader,
-		ProgressFunc:    progressFunc,
-		TotalBytes:      totalBytes,
-		progressChannel: make(chan IOProgress, 10),
-		stopChannel:     make(chan bool, 1),
+		InnerReader:  innerReader,
+		ProgressFunc: progressFunc,
+		TotalBytes:   totalBytes,
 	}
 	progressReader.startProgressPump()
 
@@ -43,6 +44,8 @@ func ProgressForFileReader(file *os.File, progressFunc IOProgressFunc) (io.Reade
 }
 
 // progressReader wraps io.Reader, and invoking a callback to indicate progress.
+//
+// Not entirely thread-safe; potential race condition between start and stop of progress pump.
 type progressReader struct {
 	InnerReader     io.Reader
 	ProgressFunc    IOProgressFunc
@@ -54,6 +57,7 @@ type progressReader struct {
 }
 
 var _ io.Reader = &progressReader{}
+var _ io.ReadCloser = &progressReader{}
 
 // Read reads up to len(buffer) bytes into buffer.
 //
@@ -76,9 +80,9 @@ func (reader *progressReader) Read(buffer []byte) (bytesRead int, err error) {
 		return
 	}
 
-	// Don't bother reporting changes less than 10%.
+	// Don't bother reporting changes less than MinProgressPercentage.
 	percentComplete := int(float64(100) * (float64(reader.CompletedBytes) / float64(reader.TotalBytes)))
-	if percentComplete-reader.PercentComplete >= 10 {
+	if percentComplete-reader.PercentComplete >= MinProgressPercentage {
 		reader.PercentComplete = percentComplete
 		reader.notifyProgress()
 	}
@@ -86,9 +90,21 @@ func (reader *progressReader) Read(buffer []byte) (bytesRead int, err error) {
 	return
 }
 
-// Notify the
+// Close the reader, terminating its progress pump.
+func (reader *progressReader) Close() error {
+	reader.stopProgressPump(false)
+
+	return nil
+}
+
+// Notify the reader of a change in progress.
 func (reader *progressReader) notifyProgress() {
-	reader.progressChannel <- IOProgress{
+	progressChannel := reader.progressChannel
+	if progressChannel == nil {
+		return
+	}
+
+	progressChannel <- IOProgress{
 		CompletedBytes:  reader.CompletedBytes,
 		TotalBytes:      reader.TotalBytes,
 		PercentComplete: reader.PercentComplete,
@@ -97,29 +113,48 @@ func (reader *progressReader) notifyProgress() {
 
 // Start the reader's progress notification pump.
 func (reader *progressReader) startProgressPump() {
+	reader.stopChannel = make(chan bool, 2 /* could stop due to Close() or error */)
+	reader.progressChannel = make(chan IOProgress, 10)
+
 	go reader.progressPump()
 }
 
 // Notify the progress pump that it should terminate.
 func (reader *progressReader) stopProgressPump(dueToError bool) {
-	reader.stopChannel <- dueToError
+	stopChannel := reader.stopChannel
+	if stopChannel == nil {
+		return
+	}
+
+	stopChannel <- dueToError
 }
 
 // Read from the progress channel, raising notifications as required.
 func (reader *progressReader) progressPump() {
-	log.Println("Progress pump started.")
+	stopChannel := reader.stopChannel
+	if stopChannel == nil {
+		return
+	}
+
+	progressChannel := reader.progressChannel
+	if progressChannel == nil {
+		return
+	}
 
 Loop:
 	for {
 		select {
-		case stoppedDueToError := <-reader.stopChannel:
+		case stoppedDueToError := <-stopChannel:
+			reader.stopChannel = nil
+			reader.progressChannel = nil
+
 			if stoppedDueToError {
-				log.Println("Progress pump stopped due to error.")
+				log.Println("Progress pump stopped due to read error.")
 			}
 
 			break Loop
 
-		case progress := <-reader.progressChannel:
+		case progress := <-progressChannel:
 			reader.ProgressFunc(progress)
 
 			if progress.PercentComplete == 100 {
@@ -128,5 +163,6 @@ Loop:
 		}
 	}
 
-	log.Println("Progress pump terminated.")
+	close(stopChannel)
+	close(progressChannel)
 }
