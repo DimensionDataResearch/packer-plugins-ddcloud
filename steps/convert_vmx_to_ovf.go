@@ -73,16 +73,11 @@ func (step *ConvertVMXToOVF) Run(stateBag multistep.StateBag) multistep.StepActi
 		return multistep.ActionHalt
 	}
 
-	compression := fmt.Sprintf("--compress=%d",
-		step.DiskCompression,
-	)
 	diskMode := "--diskMode=monolithicSparse"
-
 	success, err := ovfTool.Run(
-		compression, // Disk compression level
-		diskMode,    // VM disk format (single file, sparse)
-		vmxFile,     // From VMX
-		ovfFile,     // To OVF
+		diskMode, // VM disk format (single file, sparse)
+		vmxFile,  // From VMX
+		ovfFile,  // To OVF
 	)
 	if err != nil {
 		state.ShowError(err)
@@ -216,7 +211,7 @@ func (step *ConvertVMXToOVF) getTargetOVFFile() (targetOVFFile string, err error
 	return
 }
 
-func (step *ConvertVMXToOVF) createOVFTool(ui packer.Ui) (ovfTool *helpers.ToolHelper, err error) {
+func (step *ConvertVMXToOVF) createOVFTool(ui packer.Ui) (ovfTool *helpers.Tool, err error) {
 	return helpers.ForTool(step.OVFExecutable, step.OutputDir, func(programOutput string) {
 		ui.Message(fmt.Sprintf(
 			"[ovftool] %s",

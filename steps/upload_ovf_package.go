@@ -1,7 +1,6 @@
 package steps
 
 import (
-	"crypto/tls"
 	"fmt"
 	"log"
 	"os"
@@ -12,7 +11,6 @@ import (
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/helpers"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
-	"github.com/secsy/goftp"
 )
 
 // UploadOVFPackage is the step that uploads the files comprising an OVF package to CloudControl.
@@ -20,7 +18,10 @@ import (
 // Expects:
 //   - Target data center in state from ResolveDatacenter step.
 //   - OVF package files from source artifact in state from ConvertVMXToOVF step.
-type UploadOVFPackage struct{}
+type UploadOVFPackage struct {
+	// The path to the "curl" executable.
+	CurlExecutable string
+}
 
 // Run is called to perform the step's action.
 //
@@ -28,6 +29,11 @@ type UploadOVFPackage struct{}
 func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAction {
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
+
+	// Auto-detect tool location if not already specified.
+	if step.CurlExecutable == "" {
+		step.CurlExecutable = "curl"
+	}
 
 	targetDatacenter := state.GetTargetDatacenter()
 	if targetDatacenter == nil {
@@ -63,53 +69,57 @@ func (step *UploadOVFPackage) Run(stateBag multistep.StateBag) multistep.StepAct
 	}
 
 	settings := state.GetSettings()
-	ftpConfig := goftp.Config{
-		User:     settings.GetMCPUser(),
-		Password: settings.GetMCPPassword(),
-		TLSConfig: &tls.Config{
-			ServerName: targetDatacenter.FTPSHost,
-		},
-	}
-	ftpClient, err := goftp.DialConfig(ftpConfig, targetDatacenter.FTPSHost)
+
+	curlTool, err := step.createCurlTool(ui)
 	if err != nil {
-		ui.Error(fmt.Sprintf(
-			"Failed to connect (ftps://%s).",
-			targetDatacenter.FTPSHost,
-		))
 		state.ShowError(err)
 
 		return multistep.ActionHalt
 	}
-	defer ftpClient.Close()
 
 	packageBaseName := ""
-	for _, sourceFileName := range sourceFiles {
-		if !isOVFPackageFile(sourceFileName) {
-			log.Printf("Skipping file '%s' (does not look like an OVF package file).", sourceFileName)
+	for _, sourceFile := range sourceFiles {
+		if !isOVFPackageFile(sourceFile) {
+			log.Printf("Skipping file '%s' (does not look like an OVF package file).", sourceFile)
 
 			continue
 		}
 
-		targetFileName := path.Base(sourceFileName)
+		targetFileName := path.Base(sourceFile)
 		ui.Message(fmt.Sprintf(
 			"Uploading '%s'...", targetFileName,
 		))
 
-		if path.Ext(targetFileName) == ".ovf" {
+		if strings.HasSuffix(targetFileName, ".ovf") {
 			packageBaseName = strings.Replace(targetFileName, ".ofv", "", 1)
 		}
 
-		sourceFile, err := os.Open(sourceFileName)
+		success, err := curlTool.Run(
+			"-s", // No progress bar
+			"-S", // But still show errors
+			"--user",
+			fmt.Sprintf("%s:%s",
+				settings.GetMCPUser(),
+				settings.GetMCPPassword(),
+			),
+			"--upload-file",
+			sourceFile,
+			"--ssl", // FTPS
+			fmt.Sprintf("ftp://%s/%s",
+				targetDatacenter.FTPSHost,
+				targetFileName,
+			),
+		)
 		if err != nil {
 			state.ShowError(err)
 
 			return multistep.ActionHalt
 		}
-		defer sourceFile.Close()
-
-		err = ftpClient.Store(targetFileName, sourceFile)
-		if err != nil {
-			state.ShowError(err)
+		if !success {
+			state.ShowErrorMessage("Failed to upload file '%s' to '%s'",
+				sourceFile,
+				targetDatacenter.FTPSHost,
+			)
 
 			return multistep.ActionHalt
 		}
@@ -147,22 +157,18 @@ var _ multistep.Step = &UploadOVFPackage{}
 
 // Is the specified file part of an OVF package (from Cloud Control's point of view)?
 func isOVFPackageFile(fileName string) bool {
-	switch path.Base(fileName) {
-	case ".vmdk": // VM disk
-	case ".ovf": // OVF
-	case ".mf": // Manifest
-		return true
-	}
-
-	return false
+	return strings.HasSuffix(fileName, ".vmdk") ||
+		strings.HasSuffix(fileName, ".mf") ||
+		strings.HasSuffix(fileName, ".ovf")
 }
 
+// Verify that the OFV package files include all required file types (OVF, MF, and VMDK).
 func (step *UploadOVFPackage) validateOVFPackageFiles(packageFiles []string) (err error) {
 	var haveVMDK, haveOVF, haveMF bool
 	for _, packageFile := range packageFiles {
 		log.Printf("UploadOVFPackage: validating package file '%s'...", packageFile)
 
-		haveVMDK = haveVMDK || strings.HasSuffix(packageFile, ".vmdk") || strings.HasSuffix(packageFile, ".vmdk.gz")
+		haveVMDK = haveVMDK || strings.HasSuffix(packageFile, ".vmdk")
 		haveOVF = haveOVF || strings.HasSuffix(packageFile, ".ovf")
 		haveMF = haveMF || strings.HasSuffix(packageFile, ".mf")
 	}
@@ -184,4 +190,15 @@ func (step *UploadOVFPackage) validateOVFPackageFiles(packageFiles []string) (er
 	}
 
 	return
+}
+
+func (step *UploadOVFPackage) createCurlTool(ui packer.Ui) (*helpers.Tool, error) {
+	workDir, _ := os.Getwd()
+
+	return helpers.ForTool(step.CurlExecutable, workDir, func(programOutput string) {
+		ui.Message(fmt.Sprintf(
+			"[curl] %s",
+			programOutput,
+		))
+	})
 }

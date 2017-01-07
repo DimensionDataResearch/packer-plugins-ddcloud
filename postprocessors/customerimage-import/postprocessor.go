@@ -70,11 +70,11 @@ func (postProcessor *PostProcessor) Configure(settings ...interface{}) (err erro
 				DiskCompression: 5,    // Hard-coded for now
 			},
 			&steps.UploadOVFPackage{},
-			// &steps.ImportCustomerImage{
-			// 	TargetImageName:  postProcessor.settings.TargetImageName,
-			// 	DatacenterID:     postProcessor.settings.DatacenterID,
-			// 	OVFPackagePrefix: postProcessor.settings.OVFPackagePrefix,
-			// },
+			&steps.ImportCustomerImage{
+				TargetImageName:  postProcessor.settings.TargetImageName,
+				DatacenterID:     postProcessor.settings.DatacenterID,
+				OVFPackagePrefix: postProcessor.settings.OVFPackagePrefix,
+			},
 		},
 	}
 

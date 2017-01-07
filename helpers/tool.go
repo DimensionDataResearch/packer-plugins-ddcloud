@@ -16,8 +16,8 @@ type OutputHandler func(string)
 // The default output handler (does nothing).
 var defaultOutputHandler = func(string) {}
 
-// ToolHelper represents an external tool.
-type ToolHelper struct {
+// Tool represents an external tool.
+type Tool struct {
 	// The tool name.
 	Name string
 
@@ -32,7 +32,7 @@ type ToolHelper struct {
 }
 
 // ForTool creates a new external tool helper.
-func ForTool(toolExecutable string, workDir string, outputHandler OutputHandler) (tool *ToolHelper, err error) {
+func ForTool(toolExecutable string, workDir string, outputHandler OutputHandler) (tool *Tool, err error) {
 	if toolExecutable == path.Base(toolExecutable) {
 		toolExecutable, err = exec.LookPath(toolExecutable)
 		if err != nil {
@@ -44,7 +44,7 @@ func ForTool(toolExecutable string, workDir string, outputHandler OutputHandler)
 		outputHandler = defaultOutputHandler
 	}
 
-	tool = &ToolHelper{
+	tool = &Tool{
 		Name:           path.Base(toolExecutable),
 		ExecutablePath: toolExecutable,
 		WorkDir:        workDir,
@@ -55,7 +55,7 @@ func ForTool(toolExecutable string, workDir string, outputHandler OutputHandler)
 }
 
 // Run invokes the tool.
-func (tool *ToolHelper) Run(args ...string) (success bool, err error) {
+func (tool *Tool) Run(args ...string) (success bool, err error) {
 	var (
 		toolCommand *exec.Cmd
 		stdoutPipe  io.ReadCloser
@@ -115,13 +115,13 @@ func (tool *ToolHelper) Run(args ...string) (success bool, err error) {
 // Scan STDOUT and STDERR pipes for a process.
 //
 // Calls the supplied PipeHandler once for each line encountered.
-func (tool *ToolHelper) scanProcessPipes(stdioPipe io.ReadCloser, stderrPipe io.ReadCloser) {
+func (tool *Tool) scanProcessPipes(stdioPipe io.ReadCloser, stderrPipe io.ReadCloser) {
 	go tool.scanPipe(stdioPipe, "STDOUT")
 	go tool.scanPipe(stderrPipe, "STDERR")
 }
 
 // Scan a process output pipe, and call the supplied PipeHandler once for each line encountered.
-func (tool *ToolHelper) scanPipe(pipe io.ReadCloser, pipeName string) {
+func (tool *Tool) scanPipe(pipe io.ReadCloser, pipeName string) {
 	lineScanner := bufio.NewScanner(pipe)
 	for lineScanner.Scan() {
 		line := lineScanner.Text()
