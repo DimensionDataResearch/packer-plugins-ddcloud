@@ -14,12 +14,13 @@ import (
 type Settings struct {
 	PackerConfig common.PackerConfig `mapstructure:",squash"`
 
-	McpRegion        string `mapstructure:"mcp_region"`
-	McpUser          string `mapstructure:"mcp_user"`
-	McpPassword      string `mapstructure:"mcp_password"`
-	DatacenterID     string `mapstructure:"datacenter"`
-	TargetImageName  string `mapstructure:"target_image"`
-	OVFPackagePrefix string `mapstructure:"ovf_package_prefix"`
+	McpRegion                string `mapstructure:"mcp_region"`
+	McpUser                  string `mapstructure:"mcp_user"`
+	McpPassword              string `mapstructure:"mcp_password"`
+	DatacenterID             string `mapstructure:"datacenter"`
+	TargetImageName          string `mapstructure:"target_image"`
+	OVFPackagePrefix         string `mapstructure:"ovf_package_prefix"`
+	DownloadToLocalDirectory string `mapstructure:"download_to_local_directory"`
 }
 
 var _ helpers.PluginConfig = &Settings{}
@@ -84,8 +85,11 @@ func (settings *Settings) Validate() (err error) {
 		)
 	}
 	if settings.OVFPackagePrefix == "" {
+		settings.OVFPackagePrefix = settings.TargetImageName
+	}
+	if settings.DownloadToLocalDirectory != "" {
 		err = packer.MultiErrorAppend(err,
-			fmt.Errorf("'ovf_package_prefix' has not been specified in settings"),
+			fmt.Errorf("'download_to_local_directory' is not supported yet"),
 		)
 	}
 
