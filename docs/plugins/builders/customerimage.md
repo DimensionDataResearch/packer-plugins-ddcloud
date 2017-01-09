@@ -18,3 +18,36 @@ Can also be specified via the `MCP_PASSWORD` environment variable.
 Set this to `true` if you're running packer from inside the MCP 2.0 network domain where the image will be created.
 * `client_ip` (Optional) is your client machine's public (external) IP address.  
 Required if `use_private_ipv4` is not set.
+
+## Sample configurations
+
+### Create a new customer image in Cloud Control
+
+`build.json`:
+
+```json
+{
+	"builders": [
+		{
+			"type": "ddcloud-customerimage",
+			"mcp_region": "AU",
+			"datacenter": "AU9",
+			"networkdomain": "MyNetworkDomain",
+			"vlan": "MyVLAN",
+            "source_image": "Ubuntu 14.04 2 CPU",
+			"target_image": "packertest",
+			"client_ip": "1.2.3.4",
+			"communicator": "ssh"
+		}
+	],
+	"provisioners": [
+		{
+			"type": "shell",
+			"inline": [
+				"echo 'my_password' | sudo -S su",
+				"sudo apt-get update"
+			]
+		}
+	]
+}
+```
