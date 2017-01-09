@@ -84,9 +84,7 @@ func (settings *Settings) Validate() (err error) {
 		)
 	}
 	if settings.OVFPackagePrefix == "" {
-		err = packer.MultiErrorAppend(err,
-			fmt.Errorf("'ovf_package_prefix' has not been specified in settings"),
-		)
+		settings.OVFPackagePrefix = settings.TargetImageName
 	}
 
 	return
