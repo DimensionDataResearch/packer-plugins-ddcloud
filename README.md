@@ -4,16 +4,7 @@ Plugins for [Hashicorp Packer](https://packer.io/) that target Dimension Data Cl
 
 **Note**: this is a work-in-progress; it's not production-ready yet.
 
-Currently, the following builder plugins are available:
-
-* `ddcloud-customerimage` Deploys a server in CloudControl, runs configured provisioners (if any), then clones the server to create a Customer image.  
-The deployed server is destroyed once cloning is complete.
-
-Currently, the following post-processor plugins are available:
-
-* `ddcloud-customerimage-import` Converts a VMWare .vmx artifact to .ovf format, uploads it to Cloud Control, and imports it as a customer image.
-
-We're also planning to create a plugin that uploads an OVF and imports it to create a customer image.
+See the [plugin documentation](docs/plugins/README.md) for details.
 
 ## Installing
 
