@@ -11,4 +11,3 @@ addons:
 install:
   - ./init.sh
   - cd $GOPATH/src/github.com/DimensionDataResearch/packer-plugins-ddcloud
-  - cat vendor/github.com/andelf/go-curl/*.*

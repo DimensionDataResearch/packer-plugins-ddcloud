@@ -27,11 +27,4 @@ git checkout v0.8.6
 go get -d ./... || true
 popd
 
-# Build go-curl.
-echo "Generating code for github.com/andelf/go-curl..."
-pushd vendor/github.com/andelf/go-curl
-go generate ./...
-go build .
-popd
-
 echo "Done."
