@@ -3,6 +3,11 @@ language: go
 go:
     - 1.7.1
 
+addons:
+  apt:
+    packages:
+    - libcurl4-openssl-dev
+
 install:
   - ./init.sh
   - cd $GOPATH/src/github.com/DimensionDataResearch/packer-plugins-ddcloud

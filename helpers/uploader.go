@@ -17,8 +17,8 @@ var MinProgressPercentChange = 5
 // Return true to continue, or false to cancel the upload.
 type UploadProgressFunc func(fileName string, percentComplete int, currentBytes int64, totalBytes int64) bool
 
-// Uploader handles the process of uploading files to CloudControl.
-type Uploader struct {
+// Upload handles the process of uploading files to CloudControl.
+type Upload struct {
 	// The name of the FTPS host to which files will be uploaded.
 	Host string
 
@@ -33,12 +33,12 @@ type Uploader struct {
 }
 
 // File uploads a file to Cloud Control.
-func (uploader *Uploader) File(file *os.File) error {
+func (upload *Upload) File(file *os.File) error {
 	ensureCurlInitialized()
 
 	var requestExecutionError error
 
-	request, err := uploader.createFileRequest(file, &requestExecutionError)
+	request, err := upload.createFileRequest(file, &requestExecutionError)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (uploader *Uploader) File(file *os.File) error {
 // Create a file upload request.
 //
 // requestExecutionError will receive an error if the request's read callback encounters an error.
-func (uploader *Uploader) createFileRequest(sourceFile *os.File, requestExecutionError *error) (request *curl.CURL, err error) {
+func (upload *Upload) createFileRequest(sourceFile *os.File, requestExecutionError *error) (request *curl.CURL, err error) {
 	var sourceFileInfo os.FileInfo
 	sourceFileInfo, err = sourceFile.Stat()
 	if err != nil {
@@ -67,7 +67,7 @@ func (uploader *Uploader) createFileRequest(sourceFile *os.File, requestExecutio
 
 	targetFileName := path.Base(sourceFile.Name())
 	request = curl.EasyInit()
-	err = request.Setopt(curl.OPT_URL, fmt.Sprintf("ftp://%s/%s", uploader.Host, targetFileName))
+	err = request.Setopt(curl.OPT_URL, fmt.Sprintf("ftp://%s/%s", upload.Host, targetFileName))
 	if err != nil {
 		return
 	}
@@ -82,12 +82,12 @@ func (uploader *Uploader) createFileRequest(sourceFile *os.File, requestExecutio
 		return
 	}
 
-	err = request.Setopt(curl.OPT_USERNAME, uploader.Username)
+	err = request.Setopt(curl.OPT_USERNAME, upload.Username)
 	if err != nil {
 		return
 	}
 
-	err = request.Setopt(curl.OPT_PASSWORD, uploader.Password)
+	err = request.Setopt(curl.OPT_PASSWORD, upload.Password)
 	if err != nil {
 		return
 	}
@@ -118,7 +118,7 @@ func (uploader *Uploader) createFileRequest(sourceFile *os.File, requestExecutio
 	}
 
 	// Progress.
-	progressFunc := uploader.ProgressFunc
+	progressFunc := upload.ProgressFunc
 	if progressFunc == nil {
 		return
 	}
