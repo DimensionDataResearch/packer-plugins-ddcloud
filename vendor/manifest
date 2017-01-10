@@ -2,6 +2,14 @@
 	"version": 0,
 	"dependencies": [
 		{
+			"importpath": "github.com/andelf/go-curl",
+			"repository": "https://github.com/andelf/go-curl",
+			"vcs": "git",
+			"revision": "7535413b4ff84a30510da31e12e6b69c4894b014",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/mitchellh/mapstructure",
 			"repository": "https://github.com/mitchellh/mapstructure",
 			"vcs": "git",
