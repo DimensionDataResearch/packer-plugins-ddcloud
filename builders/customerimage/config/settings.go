@@ -147,7 +147,7 @@ func (settings *Settings) Validate() (err error) {
 		settings.CommunicatorConfig.WinRMUser = "Administrator"
 	}
 	if settings.CommunicatorConfig.WinRMPassword == "" {
-		settings.CommunicatorConfig.WinRMHost = settings.InitialAdminPassword
+		settings.CommunicatorConfig.WinRMPassword = settings.InitialAdminPassword
 	}
 
 	return
