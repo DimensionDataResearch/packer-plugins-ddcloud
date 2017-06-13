@@ -37,7 +37,7 @@ func (step *DeployServer) Run(stateBag multistep.StateBag) multistep.StepAction 
 	deploymentConfiguration := compute.ServerDeploymentConfiguration{
 		Name:                  settings.ServerName,
 		Description:           fmt.Sprintf("Temporary server created by Packer for image '%s'", settings.TargetImage),
-		AdministratorPassword: settings.UniquenessKey,
+		AdministratorPassword: settings.InitialAdminPassword,
 		Network: compute.VirtualMachineNetwork{
 			NetworkDomainID: networkDomain.ID,
 			PrimaryAdapter: compute.VirtualMachineNetworkAdapter{

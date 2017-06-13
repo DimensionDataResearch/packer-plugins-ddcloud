@@ -18,6 +18,7 @@ Can also be specified via the `MCP_PASSWORD` environment variable.
 Set this to `true` if you're running packer from inside the MCP 2.0 network domain where the image will be created.
 * `client_ip` (Optional) is your client machine's public (external) IP address.  
 Required if `use_private_ipv4` is not set.
+* `initial_admin_password` (Optional) The administrator password to use when deploying the server from which the image will be created.
 
 ## Sample configurations
 

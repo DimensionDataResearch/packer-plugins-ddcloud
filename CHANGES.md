@@ -1,5 +1,9 @@
 # Change log - CloudControl plugins for Packer
 
+## v0.1.3-beta1
+
+* Use `initial_admin_password`, if specified.
+
 ## v0.1.3-alpha1
 
 ### Changes
