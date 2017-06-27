@@ -1,4 +1,4 @@
-VERSION = 0.1.3-beta2
+VERSION = 0.1.3-beta3
 VERSION_INFO_FILE = ./version-info.go
 
 BUILDER_PLUGIN_NAMES = customerimage customerimage-import

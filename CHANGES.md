@@ -1,5 +1,9 @@
 # Change log - CloudControl plugins for Packer
 
+## v0.1.3-beta3
+
+* Fix WinRM port bug (partially in Packer).
+
 ## v0.1.3-beta2
 
 * Fix incorrect population of WinRM password.

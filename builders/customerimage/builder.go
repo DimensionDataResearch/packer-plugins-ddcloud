@@ -92,6 +92,7 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 				SSHPort:     getSSHPort,
 				SSHConfig:   getSSHConfig,
 				WinRMConfig: getWinRMConfig,
+				WinRMPort:   getWinRMPort,
 			},
 			&common.StepProvision{},
 			&steps.CloneServer{},
@@ -177,6 +178,13 @@ func getWinRMConfig(state multistep.StateBag) (winRMConfig *communicator.WinRMCo
 		Username: settings.CommunicatorConfig.WinRMUser,
 		Password: settings.CommunicatorConfig.WinRMPassword,
 	}
+
+	return
+}
+
+func getWinRMPort(state multistep.StateBag) (port int, err error) {
+	settings := state.Get("settings").(*config.Settings)
+	port = settings.CommunicatorConfig.WinRMPort
 
 	return
 }
