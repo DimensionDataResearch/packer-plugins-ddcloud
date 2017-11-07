@@ -27,32 +27,67 @@ func (step *DeployServer) Run(stateBag multistep.StateBag) multistep.StepAction 
 	vlan := state.GetVLAN()
 	image := state.GetSourceImage()
 
-	ui.Message(fmt.Sprintf(
-		"Deploying server '%s' in network domain '%s' ('%s')...",
-		settings.ServerName,
-		networkDomain.Name,
-		networkDomain.ID,
-	))
+	var (
+		serverID string
+		err      error
+	)
 
-	deploymentConfiguration := compute.ServerDeploymentConfiguration{
-		Name:                  settings.ServerName,
-		Description:           fmt.Sprintf("Temporary server created by Packer for image '%s'", settings.TargetImage),
-		AdministratorPassword: settings.InitialAdminPassword,
-		Network: compute.VirtualMachineNetwork{
-			NetworkDomainID: networkDomain.ID,
-			PrimaryAdapter: compute.VirtualMachineNetworkAdapter{
-				VLANID: &vlan.ID,
+	// Different API calls in CloudControl to deploy servers from images that have Guest OS Customisation enabled vs disabled.
+	if image.RequiresCustomization() {
+		ui.Message(fmt.Sprintf(
+			"Deploying server '%s' in network domain '%s' ('%s')...",
+			settings.ServerName,
+			networkDomain.Name,
+			networkDomain.ID,
+		))
+
+		deploymentConfiguration := compute.ServerDeploymentConfiguration{
+			Name:                  settings.ServerName,
+			Description:           fmt.Sprintf("Temporary server created by Packer for image '%s'", settings.TargetImage),
+			AdministratorPassword: settings.InitialAdminPassword,
+			Network: compute.VirtualMachineNetwork{
+				NetworkDomainID: networkDomain.ID,
+				PrimaryAdapter: compute.VirtualMachineNetworkAdapter{
+					VLANID: &vlan.ID,
+				},
 			},
-		},
-		Start: true, // TODO: Is it possible to auto-start the server only when one or more provisioners are configured?
-	}
-	image.ApplyTo(&deploymentConfiguration)
+			Start: true, // TODO: Is it possible to auto-start the server only when one or more provisioners are configured?
+		}
+		image.ApplyTo(&deploymentConfiguration)
 
-	serverID, err := client.DeployServer(deploymentConfiguration)
-	if err != nil {
-		ui.Error(err.Error())
+		serverID, err = client.DeployServer(deploymentConfiguration)
+		if err != nil {
+			ui.Error(err.Error())
 
-		return multistep.ActionHalt
+			return multistep.ActionHalt
+		}
+	} else {
+		ui.Message(fmt.Sprintf(
+			"Deploying uncustomised server '%s' in network domain '%s' ('%s')...",
+			settings.ServerName,
+			networkDomain.Name,
+			networkDomain.ID,
+		))
+
+		deploymentConfiguration := compute.UncustomizedServerDeploymentConfiguration{
+			Name:        settings.ServerName,
+			Description: fmt.Sprintf("Temporary server created by Packer for image '%s'", settings.TargetImage),
+			Network: compute.VirtualMachineNetwork{
+				NetworkDomainID: networkDomain.ID,
+				PrimaryAdapter: compute.VirtualMachineNetworkAdapter{
+					VLANID: &vlan.ID,
+				},
+			},
+			Start: true, // TODO: Is it possible to auto-start the server only when one or more provisioners are configured?
+		}
+		image.ApplyToUncustomized(&deploymentConfiguration)
+
+		serverID, err = client.DeployUncustomizedServer(deploymentConfiguration)
+		if err != nil {
+			ui.Error(err.Error())
+
+			return multistep.ActionHalt
+		}
 	}
 
 	resource, err := client.WaitForDeploy(compute.ResourceTypeServer, serverID, 20*time.Minute)
