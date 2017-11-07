@@ -92,7 +92,6 @@ func (builder *Builder) Prepare(settings ...interface{}) (warnings []string, err
 				SSHPort:     getSSHPort,
 				SSHConfig:   getSSHConfig,
 				WinRMConfig: getWinRMConfig,
-				WinRMPort:   getWinRMPort,
 			},
 			&common.StepProvision{},
 			&steps.CloneServer{},
