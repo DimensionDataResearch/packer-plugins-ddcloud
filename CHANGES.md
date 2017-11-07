@@ -1,5 +1,9 @@
 # Change log - CloudControl plugins for Packer
 
+## v0.1.3-beta5
+
+* Upgrade to latest version of CloudControl client to enable working with images that have Guest OS Customisation disabled (DimensionDataResearch/packer-plugins-ddcloud#3).
+
 ## v0.1.3-beta3
 
 * Fix WinRM port bug (partially in Packer).
