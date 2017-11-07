@@ -2,7 +2,8 @@
 
 ## v0.1.3-beta5
 
-* Upgrade to latest version of CloudControl client to enable working with images that have Guest OS Customisation disabled (DimensionDataResearch/packer-plugins-ddcloud#3).
+* Upgrade to latest version of CloudControl client to enable working with images that have Guest OS Customisation disabled (DimensionDataResearch/packer-plugins-ddcloud#3).  
+  Note that further work will be required to complete the implementation (see DimensionDataResearch/packer-plugins-ddcloud#4 for details).
 
 ## v0.1.3-beta3
 
