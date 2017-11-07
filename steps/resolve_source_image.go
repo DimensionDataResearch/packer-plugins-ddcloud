@@ -2,6 +2,7 @@ package steps
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/DimensionDataResearch/go-dd-cloud-compute/compute"
 	"github.com/DimensionDataResearch/packer-plugins-ddcloud/artifacts"
@@ -30,7 +31,19 @@ func (step *ResolveSourceImage) Run(stateBag multistep.StateBag) multistep.StepA
 
 	client := state.GetClient()
 
-	var image compute.Image
+	var (
+		imageType string
+		image     compute.Image
+	)
+
+	if step.MustBeCustomerImage {
+		imageType = "Customer"
+	} else {
+		imageType = "any"
+	}
+	log.Printf(
+		"Searching for %s image named '%s' in datacenter '%s'.", imageType, step.ImageName, step.DatacenterID,
+	)
 
 	osImage, err := client.FindOSImage(step.ImageName, step.DatacenterID)
 	if err != nil {
@@ -38,9 +51,29 @@ func (step *ResolveSourceImage) Run(stateBag multistep.StateBag) multistep.StepA
 
 		return multistep.ActionHalt
 	}
-	if !step.MustBeCustomerImage && osImage != nil {
+	if osImage != nil {
+		log.Printf(
+			"Found OS image '%s' ('%s') in datacenter '%s'.", step.ImageName, osImage.ID, step.DatacenterID,
+		)
+	} else {
+		log.Printf(
+			"No OS image named '%s' found in datacenter '%s'.", step.ImageName, step.DatacenterID,
+		)
+	}
+
+	if osImage != nil && !step.MustBeCustomerImage {
+		log.Printf(
+			"Using OS image '%s' in datacenter '%s'.", step.ImageName, step.DatacenterID,
+		)
+
 		image = osImage
 	} else {
+		if osImage != nil && step.MustBeCustomerImage {
+			log.Printf(
+				"Ignoring OS image '%s' in datacenter '%s' (a Customer image is required for this step).", step.ImageName, step.DatacenterID,
+			)
+		}
+
 		// Fall back to customer image.
 		customerImage, err := client.FindCustomerImage(step.ImageName, step.DatacenterID)
 		if err != nil {
@@ -49,13 +82,21 @@ func (step *ResolveSourceImage) Run(stateBag multistep.StateBag) multistep.StepA
 			return multistep.ActionHalt
 		}
 		if customerImage != nil {
+			log.Printf(
+				"Found Customer image '%s' ('%s') in datacenter '%s'.", step.ImageName, customerImage.ID, step.DatacenterID,
+			)
+
 			image = customerImage
+		} else {
+			log.Printf(
+				"No Customer image named '%s' found in datacenter '%s'.", step.ImageName, step.DatacenterID,
+			)
 		}
 	}
 
 	if image == nil {
 		ui.Error(fmt.Sprintf(
-			"Image '%s' not found in datacenter '%s'.",
+			"Unable to find any image named '%s' in datacenter '%s'.",
 			step.ImageName,
 			step.DatacenterID,
 		))
