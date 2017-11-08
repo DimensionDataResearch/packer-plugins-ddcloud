@@ -1,5 +1,9 @@
 # Change log - CloudControl plugins for Packer
 
+## v0.1.3-beta7
+
+* Don't send admin password when deploying a server if no password was provided (DimensionDataResearch/packer-plugins-ddcloud#3).
+
 ## v0.1.3-beta6
 
 * Implement deployment of servers from customer images that don't support Guest OS Customisation (DimensionDataResearch/packer-plugins-ddcloud#4).
