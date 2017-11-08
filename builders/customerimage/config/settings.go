@@ -109,10 +109,6 @@ func (settings *Settings) Validate() (err error) {
 		)
 	}
 
-	if settings.InitialAdminPassword == "" {
-		settings.InitialAdminPassword = settings.UniquenessKey // NOT secure.
-	}
-
 	// Communicator defaults.
 	settings.CommunicatorConfig.SSHTimeout = 2 * time.Minute
 	settings.CommunicatorConfig.WinRMTimeout = 2 * time.Minute

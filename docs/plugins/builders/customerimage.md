@@ -18,7 +18,7 @@ Can also be specified via the `MCP_PASSWORD` environment variable.
 Set this to `true` if you're running packer from inside the MCP 2.0 network domain where the image will be created.
 * `client_ip` (Optional) is your client machine's public (external) IP address.  
 Required if `use_private_ipv4` is not set.
-* `initial_admin_password` (Optional) The administrator password to use when deploying the server from which the image will be created.
+* `initial_admin_password` (Required unless image does not require) The administrator password to use when deploying the server from which the image will be created.
 
 ## Sample configurations
 
@@ -37,6 +37,7 @@ Required if `use_private_ipv4` is not set.
 			"vlan": "MyVLAN",
             "source_image": "Ubuntu 14.04 2 CPU",
 			"target_image": "packertest",
+			"initial_admin_password": "sn4u$ag3$!",
 			"client_ip": "1.2.3.4",
 			"communicator": "ssh"
 		}

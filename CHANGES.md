@@ -1,5 +1,9 @@
 # Change log - CloudControl plugins for Packer
 
+## v0.1.3-beta8
+
+* Don't auto-generate InitialAdminPassword if one is not supplied (DimensionDataResearch/packer-plugins-ddcloud#3).
+
 ## v0.1.3-beta7
 
 * Don't send admin password when deploying a server if no password was provided (DimensionDataResearch/packer-plugins-ddcloud#3).
