@@ -1,5 +1,9 @@
 # Change log - CloudControl plugins for Packer
 
+## 0.1.3-beta10
+
+* Don't try to delete firewall rule if `use_private_ipv4` is `true`  (DimensionDataResearch/packer-plugins-ddcloud#3).
+
 ## v0.1.3-beta9
 
 * Power off servers before destroying them (DimensionDataResearch/packer-plugins-ddcloud#3).

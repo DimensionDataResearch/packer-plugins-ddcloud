@@ -103,10 +103,14 @@ func (step *CreateFirewallRule) Cleanup(stateBag multistep.StateBag) {
 	state := helpers.ForStateBag(stateBag)
 	ui := state.GetUI()
 
+	settings := state.GetSettings().(*config.Settings)
 	client := state.GetClient()
 	server := state.GetServer()
 
 	firewallRule := state.GetFirewallRule()
+	if settings.UsePrivateIPv4 || firewallRule == nil {
+		return // Nothing to do.
+	}
 
 	ui.Message(fmt.Sprintf(
 		"Destroying firewall rule '%s' ('%s') for server '%s' ('%s')...",
