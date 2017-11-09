@@ -1,5 +1,9 @@
 # Change log - CloudControl plugins for Packer
 
+## v0.1.3-beta9
+
+* Power off servers before destroying them (DimensionDataResearch/packer-plugins-ddcloud#3).
+
 ## v0.1.3-beta8
 
 * Don't auto-generate InitialAdminPassword if one is not supplied (DimensionDataResearch/packer-plugins-ddcloud#3).
