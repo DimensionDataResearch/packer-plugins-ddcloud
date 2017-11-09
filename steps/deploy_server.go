@@ -139,18 +139,62 @@ func (step *DeployServer) Cleanup(state multistep.StateBag) {
 		server.ID,
 	))
 
-	err := client.DeleteServer(server.ID)
+	server, err := client.GetServer(server.ID)
 	if err != nil {
 		ui.Error(err.Error())
 
 		return
 	}
 
-	err = client.WaitForDelete(compute.ResourceTypeServer, server.ID, 20*time.Minute)
-	if err != nil {
-		ui.Error(err.Error())
+	if server != nil {
+		if server.Started {
+			ui.Message(fmt.Sprintf(
+				"Server '%s' ('%s') is running; shutting down...",
+				server.Name,
+				server.ID,
+			))
 
-		return
+			err = client.ShutdownServer(server.ID)
+			if err != nil {
+				ui.Error(err.Error())
+
+				return
+			}
+
+			resource, err := client.WaitForChange(compute.ResourceTypeServer, server.ID, "Shut down", 5*time.Minute)
+			if err != nil {
+				ui.Error(err.Error())
+
+				return
+			}
+			ui.Message(fmt.Sprintf(
+				"Server '%s' ('%s') has been shut down.",
+				server.Name,
+				server.ID,
+			))
+
+			if resource != nil {
+				server = resource.(*compute.Server)
+			} else {
+				server = nil
+			}
+		}
+
+		if server != nil {
+			err = client.DeleteServer(server.ID)
+			if err != nil {
+				ui.Error(err.Error())
+
+				return
+			}
+
+			err = client.WaitForDelete(compute.ResourceTypeServer, server.ID, 20*time.Minute)
+			if err != nil {
+				ui.Error(err.Error())
+
+				return
+			}
+		}
 	}
 
 	ui.Message(fmt.Sprintf(
